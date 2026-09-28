@@ -1,0 +1,40 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "All Rights Reserved"
+
+[[mods]]
+modId = "simplyanime"
+version = "${version}"
+displayName = "Simply Anime"
+authors = "Hussain"
+description = '''
+More unique weapons for Simply Swords.
+'''
+
+[[dependencies.simplyanime]]
+modId = "forge"
+mandatory = true
+versionRange = "[47,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.simplyanime]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1]"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.simplyanime]]
+modId = "architectury"
+mandatory = true
+versionRange = "[9.2.14,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.simplyanime]]
+modId = "simplyswords"
+mandatory = true
+versionRange = "[1.70.2,)"
+ordering = "AFTER"
+side = "BOTH"

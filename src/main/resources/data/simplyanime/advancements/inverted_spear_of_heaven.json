@@ -1,0 +1,37 @@
+{
+  "display": {
+    "icon": {
+      "item": "simplyanime:inverted_spear_of_heaven"
+    },
+    "title": {
+      "translate": "advancements.simplyanime.inverted_spear_of_heaven.title"
+    },
+    "description": {
+      "translate": "advancements.simplyswords.find_unique.description",
+      "with": [
+        {
+          "translate": "item.simplyanime.inverted_spear_of_heaven"
+        }
+      ]
+    },
+    "hidden": true,
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "parent": "simplyswords:runic_weapon",
+  "criteria": {
+    "requirement": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "simplyanime:inverted_spear_of_heaven"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

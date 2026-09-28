@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.hussain.simplyanime.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "client.AbstractZombieModelMixin",
+    "client.BipedEntityModelMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

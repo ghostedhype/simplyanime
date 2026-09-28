@@ -1,0 +1,31 @@
+Copyright (c) 2026 Hussain. All Rights Reserved.
+
+The source code of Simply Anime is published so it can be read, reviewed and built.
+It is source available, not open source.
+
+You may:
+- read and study the source
+- build it and use the mod in singleplayer, on servers and in videos
+- include it in modpacks, as long as the pack downloads it from its official
+  CurseForge or Modrinth page
+- fork this repository to send changes back as pull requests
+
+You may not, without written permission from the copyright holder:
+- reupload or redistribute the mod or its source, modified or not
+- publish ports or other derivative works
+- sell it or put it behind a paywall or monetised link
+
+Simply Swords belongs to Sweenus / Timefall Development. It is not included in this
+repository or in the mod; it is only used as a dependency, under the Timefall
+Development License.
+
+The sound files in src/main/resources/assets/simplyanime/sounds/enuma_elish/ are taken
+from Fate/Grand Order and belong to their respective owners. They are not covered by
+this license.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.

@@ -1,0 +1,18 @@
+{
+  "items": {
+    "simplyanime:inverted_spear_of_heaven": {
+      "theme": "echo",
+      "badges": [
+        "UNIQUE",
+        "SAI"
+      ]
+    },
+    "simplyanime:enuma_elish": {
+      "theme": "ember",
+      "badges": [
+        "UNIQUE",
+        "CLAYMORE"
+      ]
+    }
+  }
+}
