@@ -29,7 +29,6 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
 
     private static final double STEP = 1.5;
     private static final int AROUND = 18;
-    private static final float GROW_TICKS = 3.0F;
 
     public EnumaElishVisualEntityRenderer(EntityRendererFactory.Context context) {
         super(context);
@@ -66,8 +65,8 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
             }
             case EnumaElishVisualEntity.PHASE_RELEASE -> renderFlash(matrix, consumers, camRight, camUp, entity, t);
             case EnumaElishVisualEntity.PHASE_BEAM -> {
-                float grow = Math.min(1.0F, entity.getPhaseTicks(tickDelta) / GROW_TICKS);
-                renderBeam(entity, matrix, consumers, camera, camRight, camUp, time, 1.0F - (1.0F - grow) * (1.0F - grow), 0.0F);
+                float grow = EnumaElishVisualEntity.growth(entity.getPhaseTicks(tickDelta));
+                renderBeam(entity, matrix, consumers, camera, camRight, camUp, time, grow, 0.0F);
             }
             case EnumaElishVisualEntity.PHASE_FADE -> renderBeam(entity, matrix, consumers, camera, camRight, camUp, time, 1.0F, t);
             default -> {
@@ -146,7 +145,7 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
         Vec3d u = EnumaElishVisualEntity.perpendicular(dir);
         Vec3d v = dir.crossProduct(u);
         float fullRadius = entity.getRadius();
-        float thin = (1.0F - fade) * (1.0F - fade) * (1.0F - fade * 0.5F);
+        float thin = EnumaElishVisualEntity.fadeThickness(fade);
         float alpha = 1.0F - fade;
         double length = entity.getLength() * grow;
         if (length < 0.2) {
@@ -191,9 +190,9 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
         // muzzle flare and the rupture rings hanging just in front of it
         Vec3d muzzle = dir.multiply(0.2);
         float pulse = 1.0F + 0.08F * MathHelper.sin(time * 1.7F);
-        float muzzleSize = Math.min(fullRadius, 4.0F);
-        disc(glow, matrix, muzzle, u, v, muzzleSize * 1.4F * pulse * thin, GOLD, 0.9F * alpha, 0.0F);
-        billboardGlow(glow, matrix, muzzle, camRight, camUp, muzzleSize * 0.7F * pulse * thin, WHITE, 0.85F * alpha);
+        float muzzleSize = EnumaElishVisualEntity.muzzleRadius(fullRadius);
+        disc(glow, matrix, muzzle, u, v, muzzleSize * pulse * thin, GOLD, 0.9F * alpha, 0.0F);
+        billboardGlow(glow, matrix, muzzle, camRight, camUp, muzzleSize * 0.5F * pulse * thin, WHITE, 0.85F * alpha);
         for (int i = 0; i < 3; i++) {
             double at = fullRadius * (0.5 + i * 0.8);
             if (at > length) {
@@ -236,11 +235,10 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
         }
 
         if (entity.isHitTerrain() && grow >= 1.0F) {
-            float swell = 1.0F + fade * 0.9F;
             float blastAlpha = alpha * (0.85F + 0.15F * MathHelper.sin(time * 2.1F));
             // quieter when the camera is right on top of it, otherwise the whole screen goes white
             float near = (float) MathHelper.clamp(end.distanceTo(camera) / (fullRadius * 4.0), 0.35, 1.0);
-            float size = fullRadius * 1.2F * swell;
+            float size = EnumaElishVisualEntity.impactSize(fullRadius, fade);
             billboardGlow(glow, matrix, end, camRight, camUp, size * 2.6F, RED, 0.75F * blastAlpha);
             billboardGlow(glow, matrix, end, camRight, camUp, size * 1.4F, ORANGE, 0.8F * blastAlpha * near);
             billboardGlow(glow, matrix, end, camRight, camUp, size * 0.6F, WHITE, 0.9F * blastAlpha * near);

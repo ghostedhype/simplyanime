@@ -95,6 +95,6 @@ public final class EnumaElishPoses {
         // arm hangs along -y in the model, pitching it by RAISED swings it up in front
         Vec3d arm = forward.multiply(-MathHelper.sin(RAISED)).add(0, -MathHelper.cos(RAISED), 0);
         Vec3d blade = forward.multiply(MathHelper.cos(RAISED)).add(0, -MathHelper.sin(RAISED), 0);
-        return shoulder.add(arm.multiply(0.62 * scale)).add(blade.multiply(1.3 * scale));
+        return shoulder.add(arm.multiply(0.62 * scale)).add(blade.multiply(1.8 * scale));
     }
 }

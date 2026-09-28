@@ -184,6 +184,33 @@ public class EnumaElishVisualEntity extends Entity {
         return (float) (radius * (0.15 + 0.85 * open));
     }
 
+    // Everything below is shared with the renderer so hits land wherever the beam is drawn.
+    // The red glow round the beam stays clearly visible out to ~1.6x the profile, the threads,
+    // shock rings and rupture rings all sit inside that
+    public static final float EDGE = 1.6F;
+    public static final float GROW_TICKS = 3.0F;
+
+    // how far out the beam has travelled, 0..1, it shoots out over the first few ticks
+    public static float growth(float beamTicks) {
+        float g = Math.min(1.0F, beamTicks / GROW_TICKS);
+        return 1.0F - (1.0F - g) * (1.0F - g);
+    }
+
+    // how thick the beam still is during the fade, 1 when it starts and 0 at the end
+    public static float fadeThickness(float fade) {
+        return (1.0F - fade) * (1.0F - fade) * (1.0F - fade * 0.5F);
+    }
+
+    // the gold disc at the muzzle
+    public static float muzzleRadius(float radius) {
+        return Math.min(radius, 4.0F) * 1.4F;
+    }
+
+    // the fireball where the beam meets terrain, it swells as the beam fades
+    public static float impactSize(float radius, float fade) {
+        return radius * 1.2F * (1.0F + fade * 0.9F);
+    }
+
     public static Vec3d perpendicular(Vec3d dir) {
         Vec3d helper = Math.abs(dir.y) > 0.95 ? new Vec3d(1, 0, 0) : new Vec3d(0, 1, 0);
         return dir.crossProduct(helper).normalize();

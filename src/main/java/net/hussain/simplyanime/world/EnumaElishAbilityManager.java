@@ -161,12 +161,15 @@ public final class EnumaElishAbilityManager {
 
         if (cast.stage == Stage.BEAM) {
             int beamTicks = elapsed - beamStart;
-            if (beamTicks == 0) {
-                sweep(world, cast, actor, settings, true);
-            } else if (beamTicks % Math.max(1, settings.tickInterval) == 0) {
-                sweep(world, cast, actor, settings, false);
+            float reach = EnumaElishVisualEntity.growth(beamTicks);
+            // the blast lands on each target as the front of the beam reaches it
+            if (beamTicks <= EnumaElishVisualEntity.GROW_TICKS) {
+                sweep(world, cast, actor, settings, true, 0.0F, reach);
             }
-            if (cast.hitTerrain && elapsed == beamStart) {
+            if (beamTicks > 0 && beamTicks % Math.max(1, settings.tickInterval) == 0) {
+                sweep(world, cast, actor, settings, false, 0.0F, 1.0F);
+            }
+            if (cast.hitTerrain && beamTicks == (int) EnumaElishVisualEntity.GROW_TICKS) {
                 Vec3d impact = cast.end();
                 world.spawnParticles(ParticleTypes.EXPLOSION_EMITTER, impact.x, impact.y, impact.z, 1, 0, 0, 0, 0);
             }
@@ -184,6 +187,12 @@ public final class EnumaElishAbilityManager {
             return true;
         }
 
+        // still hurts while it shrinks away, at the size it is drawn
+        float fade = (elapsed - fadeStart) / (float) FADE_TICKS;
+        if (elapsed > fadeStart && (elapsed - beamStart) % Math.max(1, settings.tickInterval) == 0
+                && EnumaElishVisualEntity.fadeThickness(fade) > 0.1F) {
+            sweep(world, cast, actor, settings, false, fade, 1.0F);
+        }
         return elapsed < end;
     }
 
@@ -236,10 +245,19 @@ public final class EnumaElishAbilityManager {
         return Vec3d.fromPolar(actor.getPitch(), actor.getHeadYaw()).normalize();
     }
 
-    // blast: the big opening hit with knockback. Otherwise a lighter tick for anything still inside the beam
+    // blast: the big opening hit with knockback, once per target. Otherwise a lighter tick for anything still
+    // inside the beam. fade and reach (both 0..1) shrink the hit area the same way the beam is drawn
     private static void sweep(ServerWorld world, Cast cast, LivingEntity actor, EnumaElishItem.EffectSettings settings,
-                              boolean blast) {
+                              boolean blast, float fade, float reach) {
         float radius = (float) settings.beamRadius;
+        float thickness = EnumaElishVisualEntity.fadeThickness(fade);
+        float edge = EnumaElishVisualEntity.EDGE * thickness;
+        // 1.08 is the top of the muzzle's pulse
+        float muzzle = EnumaElishVisualEntity.muzzleRadius(radius) * 1.08F * thickness;
+        double length = cast.length * reach;
+        boolean arrived = reach >= 1.0F;
+        // the orange layer of the fireball, the red haze past it is faint
+        double impact = Math.max(settings.impactRadius, EnumaElishVisualEntity.impactSize(radius, fade) * 1.4);
         Vec3d end = cast.end();
         float damage = blast
                 ? SimplySwordsAPI.scaleAbilityDamage(SpellScalingProfile.ARCANE, actor, cast.stack,
@@ -252,30 +270,37 @@ public final class EnumaElishAbilityManager {
 
         // one box round a long diagonal beam covers a huge volume, so gather it a chunk at a time
         Set<Entity> found = new HashSet<>();
-        for (double from = 0; from < cast.length; from += CHUNK) {
-            double to = Math.min(cast.length, from + CHUNK);
+        found.addAll(world.getOtherEntities(actor, new Box(cast.origin, cast.origin).expand(muzzle + 2.0)));
+        for (double from = 0; from < length; from += CHUNK) {
+            double to = Math.min(length, from + CHUNK);
             Box area = new Box(cast.origin.add(cast.direction.multiply(from)), cast.origin.add(cast.direction.multiply(to)))
-                    .expand(radius + 2.0);
+                    .expand(radius * edge + 2.0);
             found.addAll(world.getOtherEntities(actor, area));
         }
-        if (cast.hitTerrain) {
-            found.addAll(world.getOtherEntities(actor, new Box(end, end).expand(settings.impactRadius + 2.0)));
+        if (cast.hitTerrain && arrived) {
+            found.addAll(world.getOtherEntities(actor, new Box(end, end).expand(impact + 2.0)));
         }
 
         Set<Entity> struck = new HashSet<>();
         for (Entity entity : found) {
             Box box = entity.getBoundingBox();
-            double along = MathHelper.clamp(box.getCenter().subtract(cast.origin).dotProduct(cast.direction), 0.0, cast.length);
-            boolean inBeam = distanceToPoint(box, cast.origin.add(cast.direction.multiply(along)))
-                    <= EnumaElishVisualEntity.profile(along, radius);
-            boolean inBlast = cast.hitTerrain && distanceToPoint(box, end) <= settings.impactRadius;
-            if (!inBeam && !inBlast) {
+            double raw = box.getCenter().subtract(cast.origin).dotProduct(cast.direction);
+            double along = MathHelper.clamp(raw, 0.0, length);
+            // past the front of the beam while it is still shooting out
+            boolean inBeam = raw <= length + 0.5 && distanceToPoint(box, cast.origin.add(cast.direction.multiply(along)))
+                    <= EnumaElishVisualEntity.profile(along, radius) * edge;
+            boolean inMuzzle = distanceToPoint(box, cast.origin) <= muzzle;
+            boolean inBlast = cast.hitTerrain && arrived && distanceToPoint(box, end) <= impact;
+            if (!inBeam && !inMuzzle && !inBlast) {
                 continue;
             }
 
             // multipart bosses: land the hit on the parent once
             Entity root = entity instanceof PartEntity<?> part ? part.getParent() : entity;
             if (root == null || root == actor || !struck.add(root)) {
+                continue;
+            }
+            if (blast && !cast.blasted.add(root.getUuid())) {
                 continue;
             }
 
@@ -398,6 +423,7 @@ public final class EnumaElishAbilityManager {
         Vec3d direction = new Vec3d(0, 0, 1);
         double length;
         boolean hitTerrain;
+        final Set<UUID> blasted = new HashSet<>();
 
         Cast(UUID actorId, @Nullable UUID ownerId, ItemStack stack, Hand hand, long startTime, UUID visualId,
              @Nullable UUID targetId) {
