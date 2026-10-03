@@ -44,9 +44,12 @@ public class HeavenMarkVisualEntityRenderer extends EntityRenderer<HeavenMarkVis
     @Override
     public void render(HeavenMarkVisualEntity entity, float yaw, float tickDelta, MatrixStack matrices,
                        VertexConsumerProvider vertexConsumers, int light) {
+        if (ShaderCompat.shadowPass()) {
+            return;
+        }
         float progress = entity.getProgress(tickDelta);
         VertexConsumer vertices = entity.getMode() == HeavenMarkVisualEntity.MODE_LOCK_ON ? null
-                : vertexConsumers.getBuffer(RenderLayer.getEntityTranslucent(WHITE_TEXTURE));
+                : vertexConsumers.getBuffer(AddonRenderLayers.entityTranslucent(WHITE_TEXTURE));
 
         switch (entity.getMode()) {
             case HeavenMarkVisualEntity.MODE_CRACK -> renderCrack(entity, vertices, matrices, progress);
@@ -121,7 +124,7 @@ public class HeavenMarkVisualEntityRenderer extends EntityRenderer<HeavenMarkVis
         SimplySwordsClientAPI.renderAbilityTargetHighlight(matrices, vertexConsumers, entity.age, offset,
                 target.getWidth(), LOCK_ON_STYLE);
         // highlight switches layers, need our buffer again
-        VertexConsumer vertices = vertexConsumers.getBuffer(RenderLayer.getEntityTranslucent(WHITE_TEXTURE));
+        VertexConsumer vertices = vertexConsumers.getBuffer(AddonRenderLayers.entityTranslucent(WHITE_TEXTURE));
 
         float time = entity.age + tickDelta;
         float closeIn = 1.0F - Math.min(1.0F, time / 6.0F);

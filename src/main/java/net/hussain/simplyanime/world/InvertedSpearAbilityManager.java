@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public final class InvertedSpearAbilityManager {
+public class InvertedSpearAbilityManager {
 
     private static final Map<ServerWorld, Map<UUID, SlashField>> FIELDS = new HashMap<>();
     private static final Map<ServerWorld, Map<UUID, TwinStrike>> STRIKES = new HashMap<>();
@@ -46,9 +46,6 @@ public final class InvertedSpearAbilityManager {
     private static final double LEDGE_DROP = 1.25;
     private static final double STOP_SHORT_OF_TARGET = 1.2;
     private static final int SLASH_TICKS = 6;
-
-    private InvertedSpearAbilityManager() {
-    }
 
     public static void init() {
         TickEvent.SERVER_LEVEL_POST.register(InvertedSpearAbilityManager::tick);
@@ -562,6 +559,10 @@ public final class InvertedSpearAbilityManager {
 
     private static void playSound(ServerWorld world, Entity source, SoundEvent sound, float volume, float pitch) {
         world.playSound(null, source.getX(), source.getY(), source.getZ(), sound, source.getSoundCategory(), volume, pitch);
+        SoundEvent layer = SoundRegistry.layer(sound);
+        if (layer != null) {
+            world.playSound(null, source.getX(), source.getY(), source.getZ(), layer, source.getSoundCategory(), volume * 0.45F, pitch);
+        }
     }
 
     private static void discard(ServerWorld world, @Nullable UUID id) {

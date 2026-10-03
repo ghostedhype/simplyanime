@@ -1,0 +1,37 @@
+{
+  "display": {
+    "icon": {
+      "item": "simplyanime:divine_axe_rhitta"
+    },
+    "title": {
+      "translate": "advancements.simplyanime.divine_axe_rhitta.title"
+    },
+    "description": {
+      "translate": "advancements.simplyswords.find_unique.description",
+      "with": [
+        {
+          "translate": "item.simplyanime.divine_axe_rhitta"
+        }
+      ]
+    },
+    "hidden": true,
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "parent": "simplyswords:runic_weapon",
+  "criteria": {
+    "requirement": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "simplyanime:divine_axe_rhitta"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

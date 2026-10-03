@@ -1,28 +1,33 @@
 {
-  "parent": "minecraft:item/handheld",
-  "textures": {
-    "layer0": "simplyanime:item/inverted_spear_of_heaven_held"
-  },
-  "display": {
-    "thirdperson_righthand": {
-      "rotation": [0, -90, 55],
-      "translation": [0, 4.5, 0.5],
-      "scale": [0.98, 0.98, 0.98]
-    },
-    "thirdperson_lefthand": {
-      "rotation": [0, 90, -55],
-      "translation": [0, 4.5, 0.5],
-      "scale": [0.98, 0.98, 0.98]
-    },
-    "firstperson_righthand": {
-      "rotation": [0, -90, 25],
-      "translation": [1.13, 3.4, 1.13],
-      "scale": [0.78, 0.78, 0.78]
-    },
-    "firstperson_lefthand": {
-      "rotation": [0, 90, -25],
-      "translation": [1.13, 3.4, 1.13],
-      "scale": [0.78, 0.78, 0.78]
-    }
-  }
+	"parent": "minecraft:item/handheld",
+	"textures": {
+		"layer0": "simplyanime:item/inverted_spear_of_heaven_held"
+	},
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [0, -90, 55],
+			"translation": [0, 4.5, 0.5],
+			"scale": [0.98, 0.98, 0.98]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [0, 90, -55],
+			"translation": [0, 4.5, 0.5],
+			"scale": [0.98, 0.98, 0.98]
+		},
+		"firstperson_righthand": {
+			"rotation": [0, -90, 25],
+			"translation": [1.13, 3.4, 1.13],
+			"scale": [0.78, 0.78, 0.78]
+		},
+		"firstperson_lefthand": {
+			"rotation": [0, 90, -25],
+			"translation": [1.13, 3.4, 1.13],
+			"scale": [0.78, 0.78, 0.78]
+		},
+		"fixed": {
+			"rotation": [0, 180, 0],
+			"translation": [0, 0, 0],
+			"scale": [2, 2, 2]
+		}
+	}
 }

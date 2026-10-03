@@ -18,10 +18,7 @@ import java.util.Collection;
 import java.util.List;
 
 // /SimplyAnime cooldown reset [players], handy for testing abilities back to back
-public final class SimplyAnimeCommand {
-
-    private SimplyAnimeCommand() {
-    }
+public class SimplyAnimeCommand {
 
     public static void init() {
         CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) -> register(dispatcher));

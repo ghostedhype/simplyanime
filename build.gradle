@@ -21,9 +21,45 @@ tasks.withType(JavaCompile).configureEach {
     it.options.encoding = 'UTF-8'
 }
 
+// dev only test mod, never goes in the jar
+sourceSets {
+    autotest {
+        compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+        runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+    }
+}
+
 loom {
     forge {
         mixinConfig "simplyanime.mixins.json"
+    }
+    // gradlew runClient -Pautotest -Pshaders=all -Peffect=sun,ea
+    if (project.hasProperty('autotest')) {
+        mods {
+            simplyanime {
+                sourceSet sourceSets.main
+            }
+            simplyanime_autotest {
+                sourceSet sourceSets.autotest
+            }
+        }
+        runs {
+            client {
+                runDir 'run-autotest'
+                property 'simplyanime.autotest', 'true'
+                property 'simplyanime.autotest.shaders', (project.findProperty('shaders') ?: '').toString()
+                property 'simplyanime.autotest.effect', (project.findProperty('effect') ?: '').toString()
+                property 'simplyanime.autotest.time', (project.findProperty('time') ?: '13200').toString()
+                programArgs '--width', '1280', '--height', '720'
+            }
+        }
+    }
+}
+
+tasks.matching { it.name == 'runClient' && project.hasProperty('autotest') }.configureEach {
+    dependsOn 'autotestClasses'
+    doFirst {
+        delete 'run-autotest/saves/autotest', 'run-autotest/screenshots'
     }
 }
 
@@ -36,6 +72,7 @@ repositories {
     maven { url = "https://maven.fzzyhmstrs.me/" }
     maven { url = "https://thedarkcolour.github.io/KotlinForForge/" }
     maven { url = "https://jitpack.io" }
+    mavenCentral()
 }
 
 dependencies {
@@ -61,6 +98,19 @@ dependencies {
     forgeRuntimeLibrary "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.6.3"
     forgeRuntimeLibrary "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.10.2"
     modRuntimeOnly "com.github.ZsoltMolnarrr:TinyConfig:2.3.2"
+
+    // Better Combat in the dev client to test the weapons with it, never shipped
+    modRuntimeOnly "maven.modrinth:better-combat:${project.better_combat_version}"
+    modRuntimeOnly "maven.modrinth:playeranimator:${project.player_animator_version}"
+    modRuntimeOnly "maven.modrinth:cloth-config:${project.cloth_config_version}"
+    modRuntimeOnly "io.github.llamalad7:mixinextras-forge:0.4.1"
+    forgeRuntimeLibrary "io.github.llamalad7:mixinextras-common:0.4.1"
+
+    // Oculus + Embeddium in the dev client to test the effects under shader packs, never shipped
+    modRuntimeOnly "maven.modrinth:oculus:${project.oculus_version}"
+    modRuntimeOnly "maven.modrinth:embeddium:${project.embeddium_version}"
+    // bundled inside the Oculus jar, but the dev launcher doesn't unpack it
+    forgeRuntimeLibrary "org.anarres:jcpp:1.4.14"
 }
 
 processResources {

@@ -25,6 +25,14 @@
       "minecraft:entity/player/attack/sweep4"
     ]
   },
+  "heaven_spin_swoosh_layer": {
+    "sounds": [
+      "simplyanime:spear/spin_swoosh1",
+      "simplyanime:spear/spin_swoosh2",
+      "simplyanime:spear/spin_swoosh3",
+      "simplyanime:spear/spin_swoosh4"
+    ]
+  },
   "heaven_payoff_clang": {
     "subtitle": "subtitles.simplyanime.heaven_payoff_clang",
     "sounds": [
@@ -37,6 +45,12 @@
         "name": "minecraft:item/shield/block1",
         "pitch": 0.8
       }
+    ]
+  },
+  "heaven_payoff_clang_layer": {
+    "sounds": [
+      "simplyanime:spear/payoff_clang1",
+      "simplyanime:spear/payoff_clang2"
     ]
   },
   "heaven_chain_retract": {
@@ -61,6 +75,12 @@
       }
     ]
   },
+  "heaven_dash_layer": {
+    "sounds": [
+      "simplyanime:spear/dash1",
+      "simplyanime:spear/dash2"
+    ]
+  },
   "heaven_strike_heavy": {
     "subtitle": "subtitles.simplyanime.heaven_strike_heavy",
     "sounds": [
@@ -77,6 +97,13 @@
         "volume": 0.6,
         "pitch": 1.4
       }
+    ]
+  },
+  "heaven_strike_heavy_layer": {
+    "sounds": [
+      "simplyanime:spear/strike_heavy1",
+      "simplyanime:spear/strike_heavy2",
+      "simplyanime:spear/strike_heavy3"
     ]
   },
   "heaven_strike_quick": {
@@ -96,21 +123,19 @@
       }
     ]
   },
+  "heaven_strike_quick_layer": {
+    "sounds": [
+      "simplyanime:spear/strike_quick1",
+      "simplyanime:spear/strike_quick2",
+      "simplyanime:spear/strike_quick3"
+    ]
+  },
   "enuma_elish_charge": {
     "subtitle": "subtitles.simplyanime.enuma_elish_charge",
     "sounds": [
       {
         "name": "simplyanime:enuma_elish/charge",
         "attenuation_distance": 24
-      }
-    ]
-  },
-  "enuma_elish_shout": {
-    "subtitle": "subtitles.simplyanime.enuma_elish_shout",
-    "sounds": [
-      {
-        "name": "simplyanime:enuma_elish/shout",
-        "attenuation_distance": 48
       }
     ]
   },
@@ -138,6 +163,70 @@
       {
         "name": "simplyanime:enuma_elish/impact",
         "attenuation_distance": 48
+      }
+    ]
+  },
+  "rhitta_launch": {
+    "subtitle": "subtitles.simplyanime.rhitta_launch",
+    "sounds": [
+      {
+        "name": "simplyswords:elemental_bow_fire_shoot_flyby_01",
+        "pitch": 0.8
+      },
+      {
+        "name": "simplyswords:elemental_bow_fire_shoot_flyby_02",
+        "pitch": 0.8
+      },
+      {
+        "name": "simplyswords:elemental_bow_fire_shoot_flyby_03",
+        "pitch": 0.8
+      }
+    ]
+  },
+  "rhitta_flight": {
+    "subtitle": "subtitles.simplyanime.rhitta_flight",
+    "sounds": [
+      {
+        "name": "simplyanime:rhitta/flight",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rhitta_blast": {
+    "subtitle": "subtitles.simplyanime.rhitta_blast",
+    "sounds": [
+      {
+        "name": "simplyanime:rhitta/blast",
+        "attenuation_distance": 96
+      }
+    ]
+  },
+  "rhitta_blast_roar": {
+    "subtitle": "subtitles.simplyanime.rhitta_blast_roar",
+    "sounds": [
+      {
+        "name": "simplyswords:elemental_bow_fire_shoot_impact_01",
+        "pitch": 0.7,
+        "attenuation_distance": 48
+      },
+      {
+        "name": "simplyswords:elemental_bow_fire_shoot_impact_02",
+        "pitch": 0.7,
+        "attenuation_distance": 48
+      },
+      {
+        "name": "simplyswords:elemental_bow_fire_shoot_impact_03",
+        "pitch": 0.7,
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "rhitta_build_up": {
+    "subtitle": "subtitles.simplyanime.rhitta_build_up",
+    "sounds": [
+      {
+        "name": "simplyanime:rhitta/awaken",
+        "attenuation_distance": 64
       }
     ]
   }

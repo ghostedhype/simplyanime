@@ -19,10 +19,6 @@ Simply Swords belongs to Sweenus / Timefall Development. It is not included in t
 repository or in the mod; it is only used as a dependency, under the Timefall
 Development License.
 
-The sound files in src/main/resources/assets/simplyanime/sounds/enuma_elish/ are taken
-from Fate/Grand Order and belong to their respective owners. They are not covered by
-this license.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
 INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
 PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE

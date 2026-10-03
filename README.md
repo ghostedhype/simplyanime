@@ -14,14 +14,31 @@ Forge 1.20.1.
   to fire a huge beam. It deals one heavy hit when it fires and keeps damaging anything inside it for the rest
   of the beam. It goes through terrain and never breaks blocks.
 
-Both are registered like any other Simply Swords unique: they show up in loot chests, take gems and
+**Divine Axe Rhitta** (greataxe)
+- Sunshine: the axe hits harder the higher the sun is, strongest at noon and weakest at midnight. Being
+  under a roof or in the rain weakens it, and every hit sets the target on fire.
+- Right click, Cruel Sun: raise the axe and a small sun forms over you, burning anything close to it. Then
+  it is thrown and goes off in a dome of fire. The sun and the blast are bigger toward noon.
+
+All three are registered like any other Simply Swords unique: they show up in loot chests, take gems and
 runic upgrades, and ship Better Combat weapon attributes. Ea can also be crafted (two nether stars, redstone blocks,
 gold blocks and a netherite ingot).
 
-Everything is configurable in `config/simplyanime/weapons.toml`, including damage, cooldowns, beam size,
-sounds and whether Ea is craftable or found in loot.
+Enuma Elish and Cruel Sun show the ability's name above the hotbar when they go off, that can be turned off.
+
+Config files are in `config/simplyanime/`:
+- `weapons.toml`: the spear and Ea. Damage, cooldowns, beam size, sounds, whether Ea is craftable or found in loot.
+- `rhitta.toml`: the axe, how the sun affects it, Cruel Sun, and the block damage options (all off by default).
+- `rhitta_client.toml` and `client.toml`: per player. Camera, HUD, particles, glow strength with shaders.
 
 `/SimplyAnime cooldown reset [players]` clears ability cooldowns (needs op), handy for testing.
+
+## Shaders
+
+Works with Oculus (and Embeddium). The effects use each pack's own glow and bloom and light the ground around
+them. Tested with BSL, Complementary Reimagined and Unbound, MakeUp Ultra Fast, Rethinking Voxels, Solas,
+Photon and Bliss. Photon and Bliss are the weakest of those: the Ea beam loses its outer glow in Photon and the
+top of the sun looks darker in Bliss. If a pack washes the effects out, lower `shaderGlow` in `client.toml`.
 
 ## Requirements
 
@@ -43,6 +60,7 @@ Then:
 ```
 ./gradlew build        # jar ends up in build/libs/simplyanime-<version>.jar
 ./gradlew runClient    # dev client with Simply Swords and its dependencies
+./gradlew runClient -Pautotest -Pshaders=all    # casts everything under each pack in run-autotest/shaderpacks, saves screenshots
 ```
 
 Simply Swords and Simply Tooltips come from the Modrinth maven by version id (`gradle.properties`),
@@ -52,7 +70,6 @@ the Fabric jar.
 ## Credits
 
 - Simply Swords by Sweenus / Timefall Development
-- The Enuma Elish sound effects are from Fate/Grand Order and belong to their owners
 
 ## License
 

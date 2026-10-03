@@ -3,7 +3,6 @@ package net.hussain.simplyanime.client.renderer;
 import net.hussain.simplyanime.client.EnumaElishPoses;
 import net.hussain.simplyanime.entity.EnumaElishVisualEntity;
 import net.minecraft.client.render.Frustum;
-import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRenderer;
 import net.minecraft.client.render.entity.EntityRendererFactory;
@@ -47,6 +46,10 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
     @Override
     public void render(EnumaElishVisualEntity entity, float yaw, float tickDelta, MatrixStack matrices,
                        VertexConsumerProvider consumers, int light) {
+        // light doesn't cast shadows
+        if (ShaderCompat.shadowPass()) {
+            return;
+        }
         Matrix4f matrix = matrices.peek().getPositionMatrix();
         Vec3d base = entity.getLerpedPos(tickDelta);
         Vec3d camera = this.dispatcher.camera.getPos().subtract(base);
@@ -74,7 +77,7 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
         }
     }
 
-    // the build up: red wind wrapping the raised blade, an orb swelling at the tip, a sigil under the feet
+    // charge: wind round the blade, orb at the tip, sigil on the ground
     private void renderCharge(EnumaElishVisualEntity entity, LivingEntity owner, Vec3d base, Matrix4f matrix,
                               VertexConsumerProvider consumers, Vec3d camRight, Vec3d camUp, float tickDelta,
                               float time, float t) {
@@ -85,7 +88,7 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
         Vec3d v = axis.crossProduct(u);
         float rise = Math.min(1.0F, entity.getPhaseTicks(tickDelta) / 10.0F);
 
-        VertexConsumer shade = consumers.getBuffer(AddonRenderLayers.SHADE);
+        VfxBuffer shade = VfxBuffer.of(consumers, AddonRenderLayers.shade());
         for (int i = 0; i < 3; i++) {
             Vec3d center = tip.subtract(axis.multiply(0.35 + i * 0.5));
             float radius = (0.5F + i * 0.28F) * (0.6F + 0.7F * t) * rise;
@@ -93,14 +96,14 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
                     time * (0.35F + i * 0.1F), 0.4F);
         }
 
-        VertexConsumer glow = consumers.getBuffer(AddonRenderLayers.GLOW);
+        VfxBuffer glow = VfxBuffer.of(consumers, AddonRenderLayers.glow());
         for (int i = 0; i < 3; i++) {
             Vec3d center = tip.subtract(axis.multiply(0.35 + i * 0.5));
             float radius = (0.5F + i * 0.28F) * (0.6F + 0.7F * t) * rise;
             spinningBand(glow, matrix, center, axis, u, v, radius, 0.07F, RED, 0.9F * rise, -time * (0.4F + i * 0.12F), 0.3F);
         }
 
-        // orb at the tip, reddish at first and white hot by the end
+        // orb
         float orb = (0.25F + 1.5F * t * t) * rise;
         int[] heart = t > 0.6F ? WHITE : GOLD;
         billboardGlow(glow, matrix, tip, camRight, camUp, orb * 2.6F, RED, 0.55F);
@@ -119,7 +122,7 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
 
     private void renderFlash(Matrix4f matrix, VertexConsumerProvider consumers, Vec3d camRight, Vec3d camUp,
                              EnumaElishVisualEntity entity, float t) {
-        VertexConsumer glow = consumers.getBuffer(AddonRenderLayers.GLOW);
+        VfxBuffer glow = VfxBuffer.of(consumers, AddonRenderLayers.glow());
         float e = 1.0F - (1.0F - t) * (1.0F - t);
         float radius = Math.min(entity.getRadius(), 4.0F);
         Vec3d at = Vec3d.ZERO;
@@ -153,15 +156,40 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
         }
         int segments = Math.max(1, (int) Math.ceil(length / STEP));
 
-        // how close the camera sits to the beam's axis, shells get quieter from inside
+        // shells fade when the camera is inside the beam
         Vec3d toCam = camera;
         double along = MathHelper.clamp(toCam.dotProduct(dir), 0.0, length);
         double axisDistance = toCam.subtract(dir.multiply(along)).length();
         float inside = (float) MathHelper.clamp(axisDistance / (fullRadius * 1.3), 0.3, 1.0);
 
-        VertexConsumer glow = consumers.getBuffer(AddonRenderLayers.GLOW);
+        if (ShaderCompat.packInUse()) {
+            // depth strip just behind the axis, in front it would hide the core
+            VfxBuffer depth = VfxBuffer.of(consumers, AddonRenderLayers.depth(AddonRenderLayers.WHITE));
+            for (int i = 0; i < segments; i++) {
+                double s0 = length * i / segments;
+                double s1 = length * (i + 1) / segments;
+                Vec3d p0 = dir.multiply(s0);
+                Vec3d p1 = dir.multiply(s1);
+                Vec3d w0 = facing(dir, p0, camera, u);
+                Vec3d w1 = facing(dir, p1, camera, u);
+                Vec3d b0 = p0.subtract(camera.subtract(p0).normalize().multiply(0.3));
+                Vec3d b1 = p1.subtract(camera.subtract(p1).normalize().multiply(0.3));
+                ribbon(depth, matrix, b0, b1, w0, w1, radius(s0, time, fullRadius) * thin * 0.4F,
+                        radius(s1, time, fullRadius) * thin * 0.4F, WHITE, 1.0F, 1.0F);
+            }
+        }
+        // dark vortex, front half only or it cross hatches the core. has to go in before the glow like in the
+        // charge, oculus draws them in a random order otherwise
+        VfxBuffer shade = VfxBuffer.of(consumers, AddonRenderLayers.shade());
+        for (int k = 0; k < 4; k++) {
+            int[] color = k % 2 == 0 ? ABYSS : CRIMSON;
+            float strandAlpha = (k % 2 == 0 ? 0.7F : 0.55F) * alpha * inside;
+            swirl(shade, matrix, dir, u, v, camera, length, fullRadius, thin, time, k * MathHelper.HALF_PI, color, strandAlpha);
+        }
 
-        // camera facing ribbons carry the soft bloom
+        VfxBuffer glow = VfxBuffer.of(consumers, AddonRenderLayers.glow());
+
+        // ribbons for the bloom
         for (int i = 0; i < segments; i++) {
             double s0 = length * i / segments;
             double s1 = length * (i + 1) / segments;
@@ -187,7 +215,7 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
         tube(glow, matrix, dir, u, v, length, fullRadius, thin, time, 0.55F, RED, 0.2F * alpha * inside);
         tube(glow, matrix, dir, u, v, length, fullRadius, thin, time, 0.22F, GOLD, 0.3F * alpha);
 
-        // muzzle flare and the rupture rings hanging just in front of it
+        // muzzle flare + rupture rings
         Vec3d muzzle = dir.multiply(0.2);
         float pulse = 1.0F + 0.08F * MathHelper.sin(time * 1.7F);
         float muzzleSize = EnumaElishVisualEntity.muzzleRadius(fullRadius);
@@ -203,7 +231,7 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
                     time * (i % 2 == 0 ? 0.3F : -0.22F), 0.35F);
         }
 
-        // shock rings running up the beam
+        // shock rings
         for (int k = 0; k < 12; k++) {
             float age = (time % 5.0F) + k * 5.0F;
             double s = age * 4.5;
@@ -215,13 +243,13 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
             band(glow, matrix, dir.multiply(s), dir, u, v, r, 0.12F + r * 0.03F, RED, ringAlpha);
         }
 
-        // front of the beam while it is still travelling out
+        // beam front
         Vec3d end = dir.multiply(length);
         if (grow < 1.0F) {
             billboardGlow(glow, matrix, end, camRight, camUp, fullRadius * 1.5F, WHITE, 0.9F);
         }
 
-        // shockwave rolling out across the ground from the caster as it fires
+        // ground shockwave
         float wave = entity.getPhase() == EnumaElishVisualEntity.PHASE_BEAM
                 ? Math.min(1.0F, entity.getPhaseTicks(0.0F) / 14.0F) : 1.0F;
         if (wave < 1.0F) {
@@ -236,7 +264,7 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
 
         if (entity.isHitTerrain() && grow >= 1.0F) {
             float blastAlpha = alpha * (0.85F + 0.15F * MathHelper.sin(time * 2.1F));
-            // quieter when the camera is right on top of it, otherwise the whole screen goes white
+            // toned down up close or the whole screen goes white
             float near = (float) MathHelper.clamp(end.distanceTo(camera) / (fullRadius * 4.0), 0.35, 1.0);
             float size = EnumaElishVisualEntity.impactSize(fullRadius, fade);
             billboardGlow(glow, matrix, end, camRight, camUp, size * 2.6F, RED, 0.75F * blastAlpha);
@@ -244,16 +272,7 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
             billboardGlow(glow, matrix, end, camRight, camUp, size * 0.6F, WHITE, 0.9F * blastAlpha * near);
         }
 
-        // dark vortex wrapped round the outside, front half only so it doesn't cross hatch the core
-        VertexConsumer shade = consumers.getBuffer(AddonRenderLayers.SHADE);
-        for (int k = 0; k < 4; k++) {
-            int[] color = k % 2 == 0 ? ABYSS : CRIMSON;
-            float strandAlpha = (k % 2 == 0 ? 0.7F : 0.55F) * alpha * inside;
-            swirl(shade, matrix, dir, u, v, camera, length, fullRadius, thin, time, k * MathHelper.HALF_PI, color, strandAlpha);
-        }
-
-        // thin bright threads on top of the vortex
-        glow = consumers.getBuffer(AddonRenderLayers.GLOW);
+        // threads
         for (int k = 0; k < 3; k++) {
             thread(glow, matrix, dir, u, v, length, fullRadius, thin, time, k * MathHelper.TAU / 3 + 0.5F, RED, 0.8F * alpha);
         }
@@ -284,12 +303,11 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
         return (float) MathHelper.clamp(dir.crossProduct(view.multiply(1.0 / len)).length() * 1.4, 0.0, 1.0);
     }
 
-    private static void ribbon(VertexConsumer vc, Matrix4f m, Vec3d p0, Vec3d p1, Vec3d w0, Vec3d w1,
+    private static void ribbon(VfxBuffer vc, Matrix4f m, Vec3d p0, Vec3d p1, Vec3d w0, Vec3d w1,
                                float half0, float half1, int[] color, float a0, float a1) {
         if (a0 <= 0.01F && a1 <= 0.01F) {
             return;
         }
-        // centre bright, edges fade to nothing
         Vec3d l0 = p0.add(w0.multiply(-half0));
         Vec3d r0 = p0.add(w0.multiply(half0));
         Vec3d l1 = p1.add(w1.multiply(-half1));
@@ -305,7 +323,7 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
         vertex(vc, m, p1, color, a1);
     }
 
-    private static void tube(VertexConsumer vc, Matrix4f m, Vec3d dir, Vec3d u, Vec3d v, double length, float full,
+    private static void tube(VfxBuffer vc, Matrix4f m, Vec3d dir, Vec3d u, Vec3d v, double length, float full,
                              float thin, float time, float scale, int[] color, float alpha) {
         if (alpha <= 0.01F) {
             return;
@@ -329,7 +347,7 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
         }
     }
 
-    private static void swirl(VertexConsumer vc, Matrix4f m, Vec3d dir, Vec3d u, Vec3d v, Vec3d camera, double length,
+    private static void swirl(VfxBuffer vc, Matrix4f m, Vec3d dir, Vec3d u, Vec3d v, Vec3d camera, double length,
                               float full, float thin, float time, float offset, int[] color, float alpha) {
         int segments = Math.max(1, (int) Math.ceil(length / 0.75));
         float width = 0.34F;
@@ -356,7 +374,7 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
         }
     }
 
-    private static void thread(VertexConsumer vc, Matrix4f m, Vec3d dir, Vec3d u, Vec3d v, double length, float full,
+    private static void thread(VfxBuffer vc, Matrix4f m, Vec3d dir, Vec3d u, Vec3d v, double length, float full,
                                float thin, float time, float offset, int[] color, float alpha) {
         int segments = Math.max(1, (int) Math.ceil(length / 0.75));
         for (int i = 0; i < segments; i++) {
@@ -380,7 +398,7 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
     }
 
     // short open cylinder round an axis
-    private static void band(VertexConsumer vc, Matrix4f m, Vec3d center, Vec3d axis, Vec3d u, Vec3d v, float radius,
+    private static void band(VfxBuffer vc, Matrix4f m, Vec3d center, Vec3d axis, Vec3d u, Vec3d v, float radius,
                              float halfWidth, int[] color, float alpha) {
         if (alpha <= 0.01F) {
             return;
@@ -400,7 +418,7 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
     }
 
     // like band, but the brightness sweeps round so you can see it spin
-    private static void spinningBand(VertexConsumer vc, Matrix4f m, Vec3d center, Vec3d axis, Vec3d u, Vec3d v,
+    private static void spinningBand(VfxBuffer vc, Matrix4f m, Vec3d center, Vec3d axis, Vec3d u, Vec3d v,
                                      float radius, float halfWidth, int[] color, float alpha, float spin, float floor) {
         if (alpha <= 0.01F || radius <= 0.01F) {
             return;
@@ -426,7 +444,7 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
     }
 
     // flat dashed ring lying in the u/v plane
-    private static void flatRing(VertexConsumer vc, Matrix4f m, Vec3d center, Vec3d u, Vec3d v, float radius,
+    private static void flatRing(VfxBuffer vc, Matrix4f m, Vec3d center, Vec3d u, Vec3d v, float radius,
                                  float width, int[] color, float alpha, float spin, int dashes) {
         if (alpha <= 0.01F || radius <= 0.01F) {
             return;
@@ -447,8 +465,8 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
         }
     }
 
-    // filled circle, bright in the middle and fading to edgeAlpha at the rim
-    private static void disc(VertexConsumer vc, Matrix4f m, Vec3d center, Vec3d u, Vec3d v, float radius,
+    // filled circle
+    private static void disc(VfxBuffer vc, Matrix4f m, Vec3d center, Vec3d u, Vec3d v, float radius,
                              int[] color, float alpha, float edgeAlpha) {
         if (alpha <= 0.01F || radius <= 0.01F) {
             return;
@@ -466,12 +484,12 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
         }
     }
 
-    private static void billboardGlow(VertexConsumer vc, Matrix4f m, Vec3d center, Vec3d camRight, Vec3d camUp,
+    private static void billboardGlow(VfxBuffer vc, Matrix4f m, Vec3d center, Vec3d camRight, Vec3d camUp,
                                       float radius, int[] color, float alpha) {
         disc(vc, m, center, camRight, camUp, radius, color, alpha, 0.0F);
     }
 
-    private static void spike(VertexConsumer vc, Matrix4f m, Vec3d from, Vec3d dir, Vec3d side, float length,
+    private static void spike(VfxBuffer vc, Matrix4f m, Vec3d from, Vec3d dir, Vec3d side, float length,
                               float width, int[] color, float alpha) {
         Vec3d tip = from.add(dir.multiply(length));
         vertex(vc, m, from.add(side.multiply(width)), color, alpha);
@@ -485,9 +503,8 @@ public class EnumaElishVisualEntityRenderer extends EntityRenderer<EnumaElishVis
         return new Vec3d(out.x(), out.y(), out.z());
     }
 
-    private static void vertex(VertexConsumer vc, Matrix4f m, Vec3d p, int[] color, float alpha) {
-        vc.vertex(m, (float) p.x, (float) p.y, (float) p.z)
-                .color(color[0], color[1], color[2], (int) (MathHelper.clamp(alpha, 0.0F, 1.0F) * 255))
-                .next();
+    private static void vertex(VfxBuffer vc, Matrix4f m, Vec3d p, int[] color, float alpha) {
+        vc.vertex(m, (float) p.x, (float) p.y, (float) p.z, color[0], color[1], color[2],
+                (int) (MathHelper.clamp(alpha, 0.0F, 1.0F) * 255), 0.5F, 0.5F);
     }
 }

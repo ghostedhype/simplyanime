@@ -1,0 +1,8 @@
+{
+  "required": false,
+  "replace": false,
+  "skill": "strength",
+  "level": 24,
+  "item": "minecraft:custom_item",
+  "object": "simplyanime:divine_axe_rhitta"
+}

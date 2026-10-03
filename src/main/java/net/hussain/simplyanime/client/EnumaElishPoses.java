@@ -8,14 +8,11 @@ import net.minecraft.util.Arm;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
-public final class EnumaElishPoses {
+public class EnumaElishPoses {
 
     // arm raised forward and up, which leaves the blade pointing up and back over the head
     private static final float RAISED = -2.15F;
     private static final float RAISE_TICKS = 8.0F;
-
-    private EnumaElishPoses() {
-    }
 
     public static void apply(LivingEntity entity, float animationProgress, BipedEntityModel<?> model) {
         EnumaElishVisualEntity cast = EnumaElishVisualEntity.CLIENT_BY_OWNER.get(entity.getId());
@@ -73,7 +70,7 @@ public final class EnumaElishPoses {
         main.pitch = mainPitch;
         main.yaw = model.head.yaw * 0.6F * e;
         main.roll = 0.0F;
-        // push the sword shoulder forward so it reads as a lunge rather than a swing
+        // shoulder forward so it looks like a lunge, not a swing
         main.pivotZ -= 2.0F * e;
         off.pitch = MathHelper.lerp(e, off.pitch, 0.5F);
         off.yaw = 0.0F;

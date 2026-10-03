@@ -12,6 +12,10 @@ import net.hussain.simplyanime.registry.EntityRegistry;
 import net.hussain.simplyanime.registry.ItemsRegistry;
 import net.hussain.simplyanime.registry.ParticlesRegistry;
 import net.hussain.simplyanime.registry.SoundRegistry;
+import net.hussain.simplyanime.rhitta.RhittaGrowth;
+import net.hussain.simplyanime.rhitta.RhittaRegistry;
+import net.hussain.simplyanime.rhitta.config.RhittaConfig;
+import net.hussain.simplyanime.rhitta.entity.CruelSunEntity;
 import net.hussain.simplyanime.world.EnumaElishAbilityManager;
 import net.hussain.simplyanime.world.InvertedSpearAbilityManager;
 import net.minecraft.block.Blocks;
@@ -29,12 +33,16 @@ public class SimplyAnime {
         EventBuses.registerModEventBus(MOD_ID, FMLJavaModLoadingContext.get().getModEventBus());
 
         Config.init();
+        RhittaConfig.init();
         ItemsRegistry.ITEM.register();
         SoundRegistry.SOUND.register();
         EntityRegistry.ENTITIES.register();
         ParticlesRegistry.PARTICLES.register();
         InvertedSpearAbilityManager.init();
         EnumaElishAbilityManager.init();
+        RhittaRegistry.register();
+        CruelSunEntity.init();
+        RhittaGrowth.init();
         RecipeToggleCondition.register();
         SimplyAnimeCommand.init();
 
@@ -51,6 +59,12 @@ public class SimplyAnime {
             }
             SimplySwordsAPI.registerWeaponType(ItemsRegistry.ENUMA_ELISH.get(),
                     new Identifier("simplyswords", "claymore"));
+
+            if (RhittaConfig.get().axe.lootable) {
+                SimplySwordsAPI.registerUniqueLoot(RhittaRegistry.DIVINE_AXE_RHITTA.get(), 1);
+            }
+            SimplySwordsAPI.registerWeaponType(RhittaRegistry.DIVINE_AXE_RHITTA.get(),
+                    new Identifier("simplyswords", "greataxe"));
         });
 
         EnvExecutor.runInEnv(Env.CLIENT, () -> SimplyAnimeClient::init);
