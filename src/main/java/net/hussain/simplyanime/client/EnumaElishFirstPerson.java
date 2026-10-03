@@ -10,12 +10,9 @@ import net.minecraft.util.math.RotationAxis;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 
 // first person version of the charge and thrust, the third person one lives in EnumaElishPoses
-public final class EnumaElishFirstPerson implements IClientItemExtensions {
+public class EnumaElishFirstPerson implements IClientItemExtensions {
 
     public static final EnumaElishFirstPerson INSTANCE = new EnumaElishFirstPerson();
-
-    private EnumaElishFirstPerson() {
-    }
 
     @Override
     public boolean applyForgeHandTransform(MatrixStack matrices, ClientPlayerEntity player, Arm arm, ItemStack stack,

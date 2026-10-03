@@ -9,6 +9,8 @@ import net.hussain.simplyanime.config.Config;
 import net.hussain.simplyanime.entity.EnumaElishVisualEntity;
 import net.hussain.simplyanime.item.EnumaElishItem;
 import net.hussain.simplyanime.registry.ParticlesRegistry;
+import net.hussain.simplyanime.callout.Callout;
+import net.hussain.simplyanime.callout.Callouts;
 import net.hussain.simplyanime.registry.SoundRegistry;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -30,7 +32,9 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.entity.PartEntity;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.sweenus.simplyswords.api.SimplySwordsAPI;
 import net.sweenus.simplyswords.api.SpellScalingProfile;
 import net.sweenus.simplyswords.api.WeaponAbilityContext;
@@ -45,16 +49,13 @@ import java.util.UUID;
 
 // Charge -> release -> beam -> fade. The beam is a line test against entity boxes, nothing
 // here ever reads or writes a block state apart from the one raycast that finds where it stops.
-public final class EnumaElishAbilityManager {
+public class EnumaElishAbilityManager {
 
     private static final Map<ServerWorld, Map<UUID, Cast>> CASTS = new HashMap<>();
 
     private static final int RELEASE_TICKS = 4;
     private static final int FADE_TICKS = 16;
     private static final double CHUNK = 16.0;
-
-    private EnumaElishAbilityManager() {
-    }
 
     public static void init() {
         TickEvent.SERVER_LEVEL_POST.register(EnumaElishAbilityManager::tick);
@@ -63,6 +64,12 @@ public final class EnumaElishAbilityManager {
         PlayerEvent.CHANGE_DIMENSION.register((player, oldLevel, newLevel) -> clearActor(player));
         PlayerEvent.PLAYER_QUIT.register(EnumaElishAbilityManager::clearActor);
         EntityEvent.LIVING_HURT.register(EnumaElishAbilityManager::onHurt);
+        // Ea has no basic attacks, Enuma Elish is all it does
+        MinecraftForge.EVENT_BUS.addListener((AttackEntityEvent event) -> {
+            if (event.getEntity().getMainHandStack().getItem() instanceof EnumaElishItem) {
+                event.setCanceled(true);
+            }
+        });
     }
 
     public static boolean isBusy(ServerWorld world, LivingEntity actor) {
@@ -132,8 +139,8 @@ public final class EnumaElishAbilityManager {
                 return false;
             }
             visual.setPosition(actor.getX(), actor.getY(), actor.getZ());
-            if (elapsed == Math.max(0, release - settings.shoutLead)) {
-                playSound(world, actor.getPos(), SoundRegistry.ENUMA_ELISH_SHOUT.get(), settings.shoutVolume, settings.shoutPitch);
+            if (settings.nameText && elapsed == Math.max(0, release - settings.nameTextLead)) {
+                Callouts.send(world, actor.getPos(), Callout.ENUMA_ELISH);
             }
             if (elapsed % 4 == 0) {
                 float t = elapsed / (float) Math.max(1, release);
@@ -228,9 +235,8 @@ public final class EnumaElishAbilityManager {
         world.spawnParticles(ParticlesRegistry.RUPTURE_EMBER.get(), origin.x, origin.y, origin.z, 30, 0.5, 0.5, 0.5, 0.6);
     }
 
-    // Players: pitch and head yaw from the server copy of the player. In first person that is exactly the
-    // camera. In third person it is where the character model is looking, a detached or free-look camera
-    // never reaches the server so it can't pull the aim off. Mobs aim at their target.
+    // players: pitch and head yaw from the server's copy, a free-look camera never reaches the server.
+    // mobs aim at their target
     private static Vec3d aimDirection(ServerWorld world, Cast cast, LivingEntity actor) {
         if (!(actor instanceof PlayerEntity)) {
             LivingEntity target = cast.targetId != null && world.getEntity(cast.targetId) instanceof LivingEntity living
@@ -245,8 +251,8 @@ public final class EnumaElishAbilityManager {
         return Vec3d.fromPolar(actor.getPitch(), actor.getHeadYaw()).normalize();
     }
 
-    // blast: the big opening hit with knockback, once per target. Otherwise a lighter tick for anything still
-    // inside the beam. fade and reach (both 0..1) shrink the hit area the same way the beam is drawn
+    // blast = the opening hit with knockback, once per target. otherwise a lighter tick.
+    // fade and reach (0..1) shrink the hit area the same way the beam is drawn
     private static void sweep(ServerWorld world, Cast cast, LivingEntity actor, EnumaElishItem.EffectSettings settings,
                               boolean blast, float fade, float reach) {
         float radius = (float) settings.beamRadius;

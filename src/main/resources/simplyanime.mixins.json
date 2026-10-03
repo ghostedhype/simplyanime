@@ -5,7 +5,8 @@
   "compatibilityLevel": "JAVA_17",
   "client": [
     "client.AbstractZombieModelMixin",
-    "client.BipedEntityModelMixin"
+    "client.BipedEntityModelMixin",
+    "client.CameraMixin"
   ],
   "injectors": {
     "defaultRequire": 1

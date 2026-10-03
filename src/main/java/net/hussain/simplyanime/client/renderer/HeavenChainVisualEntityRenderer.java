@@ -72,23 +72,28 @@ public class HeavenChainVisualEntityRenderer extends EntityRenderer<HeavenChainV
         Vec3d blade = entity.bladePos(owner, tickDelta);
         Vec3d hand = handAnchor(owner, entity, phase != HeavenChainVisualEntity.PHASE_WINDUP, tickDelta);
 
-        VertexConsumer glow = vertexConsumers.getBuffer(RenderLayer.getEntityTranslucent(WHITE_TEXTURE));
+        VertexConsumer glow = vertexConsumers.getBuffer(AddonRenderLayers.entityTranslucent(WHITE_TEXTURE));
         MatrixStack.Entry entry = matrices.peek();
         Matrix4f matrix = entry.getPositionMatrix();
         Matrix3f normal = entry.getNormalMatrix();
 
-        if (phase == HeavenChainVisualEntity.PHASE_SPIN) {
-            float t = Math.min(phaseTime, entity.getSpinDuration());
-            renderSpinTrail(glow, matrix, normal, entity, origin, ownerPos, t, entity.getRadius(), entity.getBaseYaw(), 1.0F);
-            // second fainter streak, one looked empty
-            renderSpinTrail(glow, matrix, normal, entity, origin, ownerPos, t, entity.getRadius() * 0.75F,
-                    entity.getBaseYaw() + MathHelper.PI * 0.9F, 0.55F);
-        } else if (phase != HeavenChainVisualEntity.PHASE_WINDUP) {
-            renderHistoryTrail(glow, matrix, normal, entity, origin, blade);
+        // the chain and blade still cast shadows, the trails are only light
+        if (!ShaderCompat.shadowPass()) {
+            if (phase == HeavenChainVisualEntity.PHASE_SPIN) {
+                float t = Math.min(phaseTime, entity.getSpinDuration());
+                renderSpinTrail(glow, matrix, normal, entity, origin, ownerPos, t, entity.getRadius(), entity.getBaseYaw(), 1.0F);
+                // second fainter streak, one looked empty
+                renderSpinTrail(glow, matrix, normal, entity, origin, ownerPos, t, entity.getRadius() * 0.75F,
+                        entity.getBaseYaw() + MathHelper.PI * 0.9F, 0.55F);
+            } else if (phase != HeavenChainVisualEntity.PHASE_WINDUP) {
+                renderHistoryTrail(glow, matrix, normal, entity, origin, blade);
+            }
         }
 
         if (phase != HeavenChainVisualEntity.PHASE_WINDUP) {
-            renderChain(glow, matrix, normal, hand.subtract(origin), blade.subtract(origin), light);
+            // the links are metal, lit by the world, not glowing like the trails
+            VertexConsumer links = vertexConsumers.getBuffer(RenderLayer.getEntityTranslucent(WHITE_TEXTURE));
+            renderChain(links, matrix, normal, hand.subtract(origin), blade.subtract(origin), light);
             renderBlade(entity, matrices, vertexConsumers, blade.subtract(origin), blade.subtract(hand),
                     phase == HeavenChainVisualEntity.PHASE_SPIN ? phaseTime : 0.0F, light);
         }

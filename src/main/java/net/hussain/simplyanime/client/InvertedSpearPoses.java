@@ -8,10 +8,7 @@ import net.minecraft.util.Arm;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
-public final class InvertedSpearPoses {
-
-    private InvertedSpearPoses() {
-    }
+public class InvertedSpearPoses {
 
     public static void apply(LivingEntity entity, float animationProgress, BipedEntityModel<?> model) {
         HeavenChainVisualEntity ability = HeavenChainVisualEntity.CLIENT_BY_OWNER.get(entity.getId());

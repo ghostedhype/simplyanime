@@ -1,6 +1,7 @@
 .gradle/
 build/
 run/
+run-autotest/
 out/
 .idea/
 *.iml
@@ -9,3 +10,4 @@ bin/
 *.mp4
 references/
 *.log
+showcase/

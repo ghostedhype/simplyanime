@@ -1,5 +1,6 @@
 package net.hussain.simplyanime.entity;
 
+import net.hussain.simplyanime.client.EffectLights;
 import net.hussain.simplyanime.client.EnumaElishPoses;
 import net.hussain.simplyanime.registry.EntityRegistry;
 import net.hussain.simplyanime.registry.ParticlesRegistry;
@@ -17,6 +18,8 @@ import net.minecraft.util.math.random.Random;
 import net.minecraft.world.World;
 import org.joml.Vector3f;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -92,8 +95,7 @@ public class EnumaElishVisualEntity extends Entity {
         int phase = this.getPhase();
         if (owner != null) {
             CLIENT_BY_OWNER.put(owner.getId(), this);
-            // the caster barely moves while charging, so vanilla would leave the body facing wherever the
-            // cast started. Keep it turned with the head so the stance and effects follow where you look
+            // vanilla leaves the body facing where the cast started, turn it with the head
             if (phase != PHASE_FADE) {
                 owner.prevBodyYaw = owner.prevHeadYaw;
                 owner.bodyYaw = owner.headYaw;
@@ -109,6 +111,23 @@ public class EnumaElishVisualEntity extends Entity {
             default -> {
             }
         }
+        if (this.age % 2 == 0) {
+            this.lights(owner, phase);
+        }
+    }
+
+    private void lights(LivingEntity owner, int phase) {
+        List<Vec3d> spots = new ArrayList<>();
+        if (phase == PHASE_CHARGE && owner != null) {
+            spots.add(EnumaElishPoses.chargeTip(owner, 1.0F));
+        } else if (phase == PHASE_BEAM) {
+            Vec3d dir = this.getDirection();
+            double reach = this.getLength() * growth(this.getPhaseTicks(0.0F));
+            for (double s = 2.0; s < reach && spots.size() < 14; s += 12.0) {
+                spots.add(this.getPos().add(dir.multiply(s)));
+            }
+        }
+        EffectLights.set(this, spots);
     }
 
     private void chargeParticles(LivingEntity owner) {
@@ -121,7 +140,7 @@ public class EnumaElishVisualEntity extends Entity {
         float t = this.getPhaseProgress(0.0F);
         int count = 1 + (int) (t * 5);
         for (int i = 0; i < count; i++) {
-            // embers pulled in from a shell around the blade
+            // embers pulled in
             double yaw = random.nextDouble() * MathHelper.TAU;
             double pitch = (random.nextDouble() - 0.5) * Math.PI;
             double dist = 2.5 + random.nextDouble() * 2.5;
@@ -177,16 +196,14 @@ public class EnumaElishVisualEntity extends Entity {
         }
     }
 
-    // beam radius at a distance from the muzzle: thin at the blade, opening out to full width like a cone
+    // beam radius at a distance from the muzzle, cone shaped
     public static float profile(double along, float radius) {
         double open = Math.min(1.0, along / (radius * 2.5));
         open = open * open * (3.0 - 2.0 * open);
         return (float) (radius * (0.15 + 0.85 * open));
     }
 
-    // Everything below is shared with the renderer so hits land wherever the beam is drawn.
-    // The red glow round the beam stays clearly visible out to ~1.6x the profile, the threads,
-    // shock rings and rupture rings all sit inside that
+    // shared with the renderer so hits match what's drawn
     public static final float EDGE = 1.6F;
     public static final float GROW_TICKS = 3.0F;
 
@@ -276,6 +293,7 @@ public class EnumaElishVisualEntity extends Entity {
         super.onRemoved();
         if (this.getWorld().isClient()) {
             CLIENT_BY_OWNER.values().removeIf(visual -> visual == this);
+            EffectLights.clear(this);
         }
     }
 

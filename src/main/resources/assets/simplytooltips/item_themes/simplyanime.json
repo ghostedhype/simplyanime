@@ -13,6 +13,13 @@
         "UNIQUE",
         "CLAYMORE"
       ]
+    },
+    "simplyanime:divine_axe_rhitta": {
+      "theme": "radiant",
+      "badges": [
+        "UNIQUE",
+        "GREATAXE"
+      ]
     }
   }
 }

@@ -2,6 +2,7 @@ package net.hussain.simplyanime.mixin.client;
 
 import net.hussain.simplyanime.client.EnumaElishPoses;
 import net.hussain.simplyanime.client.InvertedSpearPoses;
+import net.hussain.simplyanime.rhitta.client.RhittaPoses;
 import net.minecraft.client.render.entity.model.BipedEntityModel;
 import net.minecraft.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,5 +18,6 @@ public abstract class BipedEntityModelMixin<T extends LivingEntity> {
                                                     float headYaw, float headPitch, CallbackInfo ci) {
         InvertedSpearPoses.apply(entity, animationProgress, (BipedEntityModel<?>) (Object) this);
         EnumaElishPoses.apply(entity, animationProgress, (BipedEntityModel<?>) (Object) this);
+        RhittaPoses.apply(entity, animationProgress, (BipedEntityModel<?>) (Object) this);
     }
 }

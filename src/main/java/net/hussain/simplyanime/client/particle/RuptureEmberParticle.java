@@ -8,7 +8,7 @@ import net.minecraft.client.particle.SpriteProvider;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.particle.DefaultParticleType;
 
-// gold when fresh, cooling to deep red. Moves with the velocity it was given, no gravity
+// gold cooling to red, no gravity
 public class RuptureEmberParticle extends SpriteBillboardParticle {
 
     private final SpriteProvider sprites;

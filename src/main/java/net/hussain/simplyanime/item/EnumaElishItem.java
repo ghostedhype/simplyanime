@@ -117,7 +117,7 @@ public class EnumaElishItem extends UniqueSwordItem implements UniqueWeaponActiv
         @ValidatedInt.Restrict(min = -1, max = 9)
         public int chargeSlowness = 3;
         @ValidatedInt.Restrict(min = 0)
-        public int shoutLead = 40;
+        public int nameTextLead = 40;
 
         // beam
         @ValidatedInt.Restrict(min = 1)
@@ -126,16 +126,14 @@ public class EnumaElishItem extends UniqueSwordItem implements UniqueWeaponActiv
         public double beamRange = 160.0;
         @ValidatedDouble.Restrict(min = 0.5, max = 32.0)
         public double beamRadius = 8.0;
-        // off by default, the beam goes straight through terrain. Blocks are never broken either way
+        // blocks never break either way
         public boolean stopAtBlocks = false;
         @ValidatedDouble.Restrict(min = 0.0, max = 32.0)
         public double impactRadius = 5.0;
-        // the opening blast, hits everything in the beam once
         @ValidatedFloat.Restrict(min = 0f)
         public float blastDamageScaling = 9.0f;
         @ValidatedFloat.Restrict(min = 0f)
         public float blastSpellScaling = 25.0f;
-        // damage over time for anything standing in the beam afterwards
         @ValidatedFloat.Restrict(min = 0f)
         public float tickDamageScaling = 0.5f;
         @ValidatedFloat.Restrict(min = 0f)
@@ -145,15 +143,12 @@ public class EnumaElishItem extends UniqueSwordItem implements UniqueWeaponActiv
         @ValidatedDouble.Restrict(min = 0.0, max = 5.0)
         public double beamKnockback = 1.2;
 
-        // sounds, volume above 1 only widens how far away it can be heard
+        // volume above 1 only makes it carry further
         @ValidatedFloat.Restrict(min = 0f, max = 16f)
         public float chargeVolume = 3.0f;
         @ValidatedFloat.Restrict(min = 0.5f, max = 2f)
         public float chargePitch = 1.0f;
-        @ValidatedFloat.Restrict(min = 0f, max = 16f)
-        public float shoutVolume = 5.0f;
-        @ValidatedFloat.Restrict(min = 0.5f, max = 2f)
-        public float shoutPitch = 1.0f;
+        public boolean nameText = true;
         @ValidatedFloat.Restrict(min = 0f, max = 16f)
         public float releaseVolume = 5.0f;
         @ValidatedFloat.Restrict(min = 0.5f, max = 2f)
