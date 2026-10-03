@@ -37,8 +37,7 @@ Config files are in `config/simplyanime/`:
 
 Works with Oculus (and Embeddium). The effects use each pack's own glow and bloom and light the ground around
 them. Tested with BSL, Complementary Reimagined and Unbound, MakeUp Ultra Fast, Rethinking Voxels, Solas,
-Photon and Bliss. Photon and Bliss are the weakest of those: the Ea beam loses its outer glow in Photon and the
-top of the sun looks darker in Bliss. If a pack washes the effects out, lower `shaderGlow` in `client.toml`.
+Photon and Bliss. If a pack washes the effects out, lower `shaderGlow` in `client.toml`.
 
 ## Requirements
 
