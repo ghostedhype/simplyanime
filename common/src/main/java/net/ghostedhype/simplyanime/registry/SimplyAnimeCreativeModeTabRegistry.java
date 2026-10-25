@@ -16,8 +16,8 @@ public class SimplyAnimeCreativeModeTabRegistry {
         CREATIVE_MODE_TAB.init();
 
         CREATIVE_MODE_TAB.register("weapons", () -> CreativeModeTab.builder(null, -1)
-                .title(Component.translatable("creative_mod_tab.simplyanime.weapons"))
-                .icon(() -> new ItemStack(ItemsRegistry.DIVINE_AXE_RHITTA.get()))
+                .title(Component.translatable("itemGroup.simplyanime.weapons"))
+                .icon(() -> new ItemStack(ItemsRegistry.ICON.get()))
                 .displayItems(((itemDisplayParameters, output) -> {
                     output.accept(ItemsRegistry.DARK_REPULSER.get());
                     output.accept(ItemsRegistry.DIVINE_AXE_RHITTA.get());

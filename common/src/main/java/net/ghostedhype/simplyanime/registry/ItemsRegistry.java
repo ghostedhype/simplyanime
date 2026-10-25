@@ -36,6 +36,9 @@ public class ItemsRegistry {
             new InvertedSpearItem(SimplyAnimeTiers.SIMPLY_ANIME_UNIQUE, weaponProperties(SimplyAnimeTiers.SIMPLY_ANIME_UNIQUE,
                     Config.weapons.inverted_spear_of_heaven.damageModifier, Config.weapons.inverted_spear_of_heaven.attackSpeed)));
 
+    // only the creative tab icon, not part of any tab
+    public static final RegistrySupplier<Item> ICON = ITEMS.register("icon", () -> new Item(new Item.Properties()));
+
     public static void init() {
         ITEMS.init();
     }
