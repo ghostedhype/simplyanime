@@ -11,6 +11,10 @@ public class Constants {
     public static final Logger LOG = LoggerFactory.getLogger(MOD_NAME);
 
     public static ResourceLocation tryId(String path) {
-        return ResourceLocation.tryBuild(MOD_ID, path);
+        return location(MOD_ID, path);
+    }
+
+    public static ResourceLocation location(String namespace, String path) {
+        return ResourceLocation.tryBuild(namespace, path);
     }
 }

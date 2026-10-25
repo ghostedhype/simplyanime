@@ -1,55 +1,37 @@
-
 package net.ghostedhype.simplyanime.client;
 
-import net.ghostedhype.simplyanime.registry.ParticlesRegistry;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.ghostedhype.simplyanime.Constants;
+import net.ghostedhype.simplyanime.ability.RhittaGrowth;
+import net.ghostedhype.simplyanime.client.cinematic.BladeCinematics;
+import net.ghostedhype.simplyanime.client.cinematic.RhittaCinematics;
+import net.ghostedhype.simplyanime.client.effect.CruelSunEffects;
+import net.ghostedhype.simplyanime.client.pose.BladePoses;
+import net.ghostedhype.simplyanime.client.pose.RhittaPoses;
+import net.ghostedhype.simplyanime.client.renderer.Later;
+import net.ghostedhype.simplyanime.config.ClientConfig;
+import net.ghostedhype.simplyanime.config.RhittaClientConfig;
+import net.ghostedhype.simplyanime.item.AnimeWeaponItem;
+import net.ghostedhype.simplyanime.item.EaItem;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.player.Input;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.EntityHitResult;
+import net.sweenus.simplyswords.client.api.SimplySwordsClientAPI;
 
 public class SimplyAnimeClientCommon {
     public static ClientHooks clientHooks = ClientHooks.NONE;
 
     public static void initializeClient() {
-        ParticlesRegistry.init();
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-    //TODO Remove if not necessary
-    public interface RendererRegistrar {
-        <T extends Entity> void register(EntityType<? extends T> type, EntityRendererProvider<T> provider);
-    }
-
-    public static void init() {
         clientHooks = new CruelSunEffects();
         ClientConfig.get();
         RhittaClientConfig.get();
         SimplySwordsClientAPI.registerUniqueTooltipNamespace(Constants.MOD_ID);
     }
-
-    //TODO Move to separate registry
-    public static void registerRenderers(RendererRegistrar registrar) {
-        registrar.register(EntityRegistry.HEAVEN_CHAIN_VISUAL.get(), HeavenChainVisualEntityRenderer::new);
-        registrar.register(EntityRegistry.HEAVEN_MARK_VISUAL.get(), HeavenMarkVisualEntityRenderer::new);
-        registrar.register(EntityRegistry.EA_VISUAL.get(), EnumaElishVisualEntityRenderer::new);
-        registrar.register(EntityRegistry.CRUEL_SUN.get(), CruelSunRenderer::new);
-        registrar.register(EntityRegistry.BLADE_SKILL.get(), BladeSkillRenderer::new);
-    }
-
-    //TODO Review all of the below to see if it is actually needed, and if so, where it should go. It should not
-    // be in the base client class wherever possible.
 
     public static void tick(Minecraft client) {
         if (client.level != null) {
@@ -82,7 +64,7 @@ public class SimplyAnimeClientCommon {
 
     public static boolean blocksSwing() {
         Player player = Minecraft.getInstance().player;
-        return player != null && player.getMainHandItem().getItem() instanceof EnumaElishItem;
+        return player != null && player.getMainHandItem().getItem() instanceof EaItem;
     }
 
     public static void beforeRender(LivingEntity entity, PoseStack poseStack, float partialTick) {
@@ -96,12 +78,12 @@ public class SimplyAnimeClientCommon {
     }
 
     public static float[] shake(float partialTick) {
-        float[] sun = RhittaCinematics.shake(partialTick);
-        float[] blade = BladeCinematics.shake(partialTick);
-        if (sun == null || blade == null) {
-            return sun == null ? blade : sun;
+        float[] sunShake = RhittaCinematics.shake(partialTick);
+        float[] bladeShake = BladeCinematics.shake(partialTick);
+        if (sunShake == null || bladeShake == null) {
+            return sunShake == null ? bladeShake : sunShake;
         }
-        return new float[]{sun[0] + blade[0], sun[1] + blade[1], sun[2] + blade[2]};
+        return new float[]{sunShake[0] + bladeShake[0], sunShake[1] + bladeShake[1], sunShake[2] + bladeShake[2]};
     }
 
     public static double cameraPullBack() {
@@ -116,6 +98,4 @@ public class SimplyAnimeClientCommon {
     public static void holdInput(Player player, Input input) {
         BladeCinematics.holdInput(player, input);
     }
-
- */
 }

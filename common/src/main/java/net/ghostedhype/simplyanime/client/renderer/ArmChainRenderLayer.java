@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.phys.Vec3;
@@ -22,12 +23,8 @@ public class ArmChainRenderLayer extends RenderLayer<AbstractClientPlayer, Playe
     private static final float TURNS = 2.5F;
     private static final float LINK = 1.3F;
 
-    private final boolean slim;
-
-    public ArmChainRenderLayer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> context,
-                         boolean slim) {
+    public ArmChainRenderLayer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> context) {
         super(context);
-        this.slim = slim;
     }
 
     @Override
@@ -55,14 +52,14 @@ public class ArmChainRenderLayer extends RenderLayer<AbstractClientPlayer, Playe
         PlayerModel<AbstractClientPlayer> model = this.getParentModel();
         (arm == HumanoidArm.RIGHT ? model.rightArm : model.leftArm).translateAndRotate(poseStack);
         VertexConsumer vertices = buffers.getBuffer(RenderType.entityCutoutNoCull(SimplyAnimeRenderTypes.WHITE));
-        wrap(vertices, poseStack.last().pose(), poseStack.last().normal(), arm, light);
+        wrap(vertices, poseStack.last().pose(), poseStack.last().normal(), arm, player.getSkin().model() == PlayerSkin.Model.SLIM, light);
         poseStack.popPose();
     }
 
-    private void wrap(VertexConsumer vertices, Matrix4f matrix, Matrix3f normal, HumanoidArm arm, int light) {
+    private void wrap(VertexConsumer vertices, Matrix4f matrix, Matrix3f normal, HumanoidArm arm, boolean slim, int light) {
         // arm box in model pixels, see PlayerEntityModel
-        float halfX = this.slim ? 1.5F : 2.0F;
-        float centerX = (arm == HumanoidArm.RIGHT ? -1.0F : 1.0F) * (this.slim ? 0.5F : 1.0F);
+        float halfX = slim ? 1.5F : 2.0F;
+        float centerX = (arm == HumanoidArm.RIGHT ? -1.0F : 1.0F) * (slim ? 0.5F : 1.0F);
         float rx = halfX + 0.55F;
         float rz = 2.55F;
         float top = -0.5F;

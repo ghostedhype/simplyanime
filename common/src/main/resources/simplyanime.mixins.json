@@ -8,8 +8,10 @@
   ],
   "client": [
     "client.AbstractZombieModelMixin",
+    "client.CameraMixin",
     "client.HumanoidModelMixin",
-    "client.ItemInHandLayerMixin"
+    "client.ItemInHandLayerMixin",
+    "client.LivingEntityRendererMixin"
   ],
   "server": [
   ],
