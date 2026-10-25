@@ -3,6 +3,7 @@ package net.ghostedhype.simplyanime.client.renderer;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.Util;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 
@@ -11,6 +12,7 @@ import java.util.function.Function;
 public class SimplyAnimeStandardRenderTypes extends RenderType {
 
     private static final int BUFFER_SIZE = 262144;
+    private static final ShaderStateShard TEXTURED_SHADER = new ShaderStateShard(GameRenderer::getPositionTexColorShader);
 
     private static final RenderType GLOW = RenderType.create(
             "simplyanime_glow", DefaultVertexFormat.POSITION_COLOR,
@@ -70,7 +72,7 @@ public class SimplyAnimeStandardRenderTypes extends RenderType {
                 name, DefaultVertexFormat.POSITION_TEX_COLOR,
                 VertexFormat.Mode.QUADS, BUFFER_SIZE, false, true,
                 CompositeState.builder()
-                        .setShaderState(ShaderStateShard.POSITION_TEX_SHADER)
+                        .setShaderState(TEXTURED_SHADER)
                         .setTextureState(new TextureStateShard(texture, smooth, false))
                         .setTransparencyState(additive
                                 ? LIGHTNING_TRANSPARENCY : TRANSLUCENT_TRANSPARENCY)
