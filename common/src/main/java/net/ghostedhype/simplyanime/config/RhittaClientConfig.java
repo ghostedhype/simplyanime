@@ -13,7 +13,7 @@ public class RhittaClientConfig extends Config {
     private static RhittaClientConfig instance;
 
     public RhittaClientConfig() {
-        super(Constants.id("rhitta_client"));
+        super(Constants.tryId("rhitta_client"));
     }
 
     public static RhittaClientConfig get() {

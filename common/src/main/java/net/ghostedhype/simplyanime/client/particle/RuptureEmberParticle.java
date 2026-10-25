@@ -4,44 +4,46 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.particle.TextureSheetParticle;
+import org.jetbrains.annotations.NotNull;
 
-// gold cooling to red, no gravity
 public class RuptureEmberParticle extends TextureSheetParticle {
+    private final SpriteSet spriteSet;
 
-    private final SpriteSet sprites;
-
-    public RuptureEmberParticle(ClientLevel world, double x, double y, double z,
-                                   double velocityX, double velocityY, double velocityZ, SpriteSet sprites) {
-        super(world, x, y, z, 0, 0, 0);
-        this.sprites = sprites;
-        this.xd = velocityX;
-        this.yd = velocityY;
-        this.zd = velocityZ;
-        this.friction = 0.9F;
-        this.gravity = 0.0F;
+    public RuptureEmberParticle(ClientLevel level,
+                                double x, double y, double z,
+                                double xSpeed, double ySpeed, double zSpeed,
+                                SpriteSet spriteSet) {
+        super(level, x, y, z, xSpeed, ySpeed, zSpeed);
+        this.spriteSet = spriteSet;
+        this.xd = xSpeed;
+        this.yd = ySpeed;
+        this.zd = zSpeed;
+        this.friction = 0.9f;
+        this.gravity = 0.0f;
         this.hasPhysics = false;
-        this.quadSize = 0.1F + this.random.nextFloat() * 0.12F;
+        this.quadSize = 0.1f + this.random.nextFloat() * 0.12f;
         this.lifetime = 10 + this.random.nextInt(10);
-        this.setSpriteFromAge(sprites);
+        this.setSpriteFromAge(spriteSet);
     }
 
     @Override
     public void tick() {
         super.tick();
-        this.setSpriteFromAge(this.sprites);
+        this.setSpriteFromAge(this.spriteSet);
+
         float life = (float) this.age / this.lifetime;
-        this.gCol = 0.8F - life * 0.7F;
-        this.bCol = 0.45F - life * 0.4F;
-        this.alpha = 1.0F - life * life;
+        this.gCol = 0.8f - life * 0.7f;
+        this.bCol = 0.45f - life * 0.4f;
+        this.alpha = 1.0f - life * life;
     }
 
     @Override
-    public int getLightColor(float tint) {
+    protected int getLightColor(float partialTick) {
         return 0xF000F0;
     }
 
     @Override
-    public ParticleRenderType getRenderType() {
+    public @NotNull ParticleRenderType getRenderType() {
         return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
     }
 }

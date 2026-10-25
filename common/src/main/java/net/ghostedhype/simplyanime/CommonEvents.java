@@ -1,7 +1,7 @@
 package net.ghostedhype.simplyanime;
 
 import net.ghostedhype.simplyanime.ability.BladeSkillManager;
-import net.ghostedhype.simplyanime.ability.EnumaElishAbilityManager;
+import net.ghostedhype.simplyanime.ability.EaAbilityManager;
 import net.ghostedhype.simplyanime.ability.InvertedSpearAbilityManager;
 import net.ghostedhype.simplyanime.ability.RhittaGrowth;
 import net.ghostedhype.simplyanime.entity.CruelSunEntity;
@@ -13,19 +13,19 @@ public class CommonEvents {
 
     public static void levelTick(ServerLevel level) {
         InvertedSpearAbilityManager.tick(level);
-        EnumaElishAbilityManager.tick(level);
+        EaAbilityManager.tick(level);
         BladeSkillManager.tick(level);
     }
 
     public static void levelUnload(ServerLevel level) {
         InvertedSpearAbilityManager.clear(level);
-        EnumaElishAbilityManager.clear(level);
+        EaAbilityManager.clear(level);
         BladeSkillManager.clear(level);
     }
 
     public static void serverStopped() {
         InvertedSpearAbilityManager.clearAll();
-        EnumaElishAbilityManager.clearAll();
+        EaAbilityManager.clearAll();
         BladeSkillManager.clearAll();
         CruelSunEntity.clearAll();
     }
@@ -33,17 +33,17 @@ public class CommonEvents {
     // logged out or went to another dimension
     public static void playerGone(LivingEntity player) {
         InvertedSpearAbilityManager.clearActor(player);
-        EnumaElishAbilityManager.clearActor(player);
+        EaAbilityManager.clearActor(player);
         BladeSkillManager.clearActor(player);
     }
 
     // before armor, knockback or hurt time get touched
     public static boolean blocksDamage(LivingEntity entity, DamageSource source) {
-        return EnumaElishAbilityManager.blocksDamage(entity, source) || CruelSunEntity.blocksDamage(entity, source);
+        return EaAbilityManager.blocksDamage(entity, source) || CruelSunEntity.blocksDamage(entity, source);
     }
 
     public static boolean blocksAttack(LivingEntity attacker) {
-        return EnumaElishAbilityManager.blocksAttack(attacker) || BladeSkillManager.blocksAttack(attacker);
+        return EaAbilityManager.blocksAttack(attacker) || BladeSkillManager.blocksAttack(attacker);
     }
 
     public static float scaleDamage(LivingEntity target, DamageSource source, float amount) {

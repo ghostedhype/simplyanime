@@ -1,12 +1,16 @@
 package net.ghostedhype.simplyanime.client.particle;
 
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.ghostedhype.simplyanime.platform.ClientPlatform;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.particle.TextureSheetParticle;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
@@ -15,13 +19,13 @@ public class SunGlowParticle extends TextureSheetParticle {
     private final boolean spark;
     private final float startScale;
 
-    private SunGlowParticle(ClientLevel world, double x, double y, double z, double vx, double vy, double vz,
+    private SunGlowParticle(ClientLevel world, double x, double y, double z, double velocityX, double velocityY, double velocityZ,
                             SpriteSet sprites, boolean spark) {
         super(world, x, y, z, 0, 0, 0);
         this.spark = spark;
-        this.xd = vx;
-        this.yd = vy;
-        this.zd = vz;
+        this.xd = velocityX;
+        this.yd = velocityY;
+        this.zd = velocityZ;
         this.hasPhysics = false;
         if (spark) {
             this.gravity = 0.25F;
@@ -81,10 +85,10 @@ public class SunGlowParticle extends TextureSheetParticle {
             return;
         }
         // streak back along the velocity, facing the camera
-        Vec3 cam = camera.getPosition();
-        Vec3 at = new Vec3(Mth.lerp(partialTick, this.xo, this.x) - cam.x,
-                Mth.lerp(partialTick, this.yo, this.y) - cam.y,
-                Mth.lerp(partialTick, this.zo, this.z) - cam.z);
+        Vec3 cameraPositionVec = camera.getPosition();
+        Vec3 cameraPositionOffsetVec = new Vec3(Mth.lerp(partialTick, this.xo, this.x) - cameraPositionVec.x,
+                Mth.lerp(partialTick, this.yo, this.y) - cameraPositionVec.y,
+                Mth.lerp(partialTick, this.zo, this.z) - cameraPositionVec.z);
         Vec3 motion = new Vec3(this.xd, this.yd, this.zd);
         double speed = motion.length();
         if (speed < 1.0E-4) {
@@ -92,26 +96,26 @@ public class SunGlowParticle extends TextureSheetParticle {
             return;
         }
         Vec3 dir = motion.scale(1.0 / speed);
-        Vec3 side = dir.cross(at);
+        Vec3 side = dir.cross(cameraPositionOffsetVec);
         if (side.lengthSqr() < 1.0E-8) {
             return;
         }
         side = side.normalize().scale(this.quadSize);
-        Vec3 tail = at.subtract(dir.scale(this.quadSize * 2.0 + speed * 2.2));
-        Vec3 head = at.add(dir.scale(this.quadSize));
+        Vec3 tail = cameraPositionOffsetVec.subtract(dir.scale(this.quadSize * 2.0 + speed * 2.2));
+        Vec3 head = cameraPositionOffsetVec.add(dir.scale(this.quadSize));
         int light = 0xF000F0;
-        float u0 = this.getU0();
-        float u1 = this.getU1();
-        float v0 = this.getV0();
-        float v1 = this.getV1();
-        vertex(consumer, tail.subtract(side), u0, v1, light);
-        vertex(consumer, tail.add(side), u1, v1, light);
-        vertex(consumer, head.add(side), u1, v0, light);
-        vertex(consumer, head.subtract(side), u0, v0, light);
+        float minU = this.getU0();
+        float maxU = this.getU1();
+        float minV = this.getV0();
+        float maxV = this.getV1();
+        vertex(consumer, tail.subtract(side), minU, maxV, light);
+        vertex(consumer, tail.add(side), maxU, maxV, light);
+        vertex(consumer, head.add(side), maxU, minV, light);
+        vertex(consumer, head.subtract(side), minU, minV, light);
     }
 
-    private void vertex(VertexConsumer consumer, Vec3 p, float u, float v, int light) {
-        ClientPlatform.particleVertex(consumer, p.x, p.y, p.z, u, v, this.rCol, this.gCol, this.bCol, this.alpha, light);
+    private void vertex(VertexConsumer consumer, Vec3 vec3, float u, float v, int light) {
+        consumer.addVertex((float) vec3.x, (float) vec3.y, (float) vec3.z).setUv(u, v).setColor(this.rCol, this.gCol, this.bCol, this.alpha).setLight(light);
     }
 
     @Override
@@ -121,6 +125,12 @@ public class SunGlowParticle extends TextureSheetParticle {
 
     @Override
     public ParticleRenderType getRenderType() {
-        return this.spark ? ClientPlatform.ADDITIVE_PARTICLES : ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+        return this.spark ? (tesselator, textureManager) -> {
+            RenderSystem.depthMask(false);
+            RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_PARTICLES);
+            RenderSystem.enableBlend();
+            RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
+            return tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.PARTICLE);
+        } : ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
     }
 }

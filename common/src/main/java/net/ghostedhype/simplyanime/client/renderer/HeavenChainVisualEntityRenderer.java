@@ -5,7 +5,6 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.ghostedhype.simplyanime.client.pose.InvertedSpearPoses;
 import net.ghostedhype.simplyanime.entity.HeavenChainVisualEntity;
-import net.ghostedhype.simplyanime.platform.ClientPlatform;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -24,6 +23,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +45,7 @@ public class HeavenChainVisualEntityRenderer extends EntityRenderer<HeavenChainV
 
     @Override
     public ResourceLocation getTextureLocation(HeavenChainVisualEntity entity) {
-        return AddonRenderTypes.WHITE;
+        return SimplyAnimeRenderTypes.WHITE;
     }
 
     @Override
@@ -75,7 +75,7 @@ public class HeavenChainVisualEntityRenderer extends EntityRenderer<HeavenChainV
         Vec3 blade = entity.bladePos(owner, partialTick);
         Vec3 hand = handAnchor(owner, entity, phase != HeavenChainVisualEntity.PHASE_WINDUP, partialTick);
 
-        VertexConsumer glow = buffers.getBuffer(AddonRenderTypes.entityTranslucent(AddonRenderTypes.WHITE));
+        VertexConsumer glow = buffers.getBuffer(SimplyAnimeRenderTypes.entityTranslucent(SimplyAnimeRenderTypes.WHITE));
         PoseStack.Pose entry = poseStack.last();
         Matrix4f matrix = entry.pose();
         Matrix3f normal = entry.normal();
@@ -93,7 +93,7 @@ public class HeavenChainVisualEntityRenderer extends EntityRenderer<HeavenChainV
         }
 
         if (phase != HeavenChainVisualEntity.PHASE_WINDUP) {
-            VertexConsumer links = buffers.getBuffer(RenderType.entityTranslucent(AddonRenderTypes.WHITE));
+            VertexConsumer links = buffers.getBuffer(RenderType.entityTranslucent(SimplyAnimeRenderTypes.WHITE));
             renderChain(links, matrix, normal, hand.subtract(origin), blade.subtract(origin), light);
             renderBlade(entity, poseStack, buffers, blade.subtract(origin), blade.subtract(hand),
                     phase == HeavenChainVisualEntity.PHASE_SPIN ? phaseTime : 0.0F, light);
@@ -262,7 +262,18 @@ public class HeavenChainVisualEntityRenderer extends EntityRenderer<HeavenChainV
     private static void vertex(VertexConsumer vertices, Matrix4f matrix, Matrix3f normal, Vec3 pos,
                                int shade, int alpha, int light) {
         int a = Mth.clamp(alpha, 0, 255);
-        ClientPlatform.entityVertex(vertices, matrix, normal, (float) pos.x, (float) pos.y, (float) pos.z,
+        entityVertex(vertices, matrix, normal, (float) pos.x, (float) pos.y, (float) pos.z,
                 shade, shade, shade, a, 0.5F, 0.5F, light, 0.0F, 1.0F, 0.0F);
+    }
+
+    public static void entityVertex(VertexConsumer consumer, Matrix4f matrix, Matrix3f normal, float x, float y, float z,
+                                    int r, int g, int b, int a, float u, float v, int light, float nx, float ny, float nz) {
+        Vector3f n = normal.transform(new Vector3f(nx, ny, nz));
+        consumer.addVertex(matrix, x, y, z)
+                .setColor(r, g, b, a)
+                .setUv(u, v)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(light)
+                .setNormal(n.x(), n.y(), n.z());
     }
 }

@@ -1,0 +1,51 @@
+plugins {
+    id 'multiloader-loader'
+    id 'fabric-loom'
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+    mappings loom.layered {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-${rootProject.parchment_minecraft}:${rootProject.parchment_version}@zip")
+    }
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
+    modImplementation "net.fabricmc:fabric-language-kotlin:${rootProject.fabric_kotlin_version}"
+    modImplementation "${rootProject.fzzy_config_fabric_coordinate}"
+    // Required at runtime by Simply Swords and Simply Tooltips.
+    modRuntimeOnly "${rootProject.architectury_fabric_coordinate}"
+
+    def swords = rootProject.findProperty('simply_swords_fabric_coordinate')?.trim()
+    if (swords) modImplementation swords
+    def tooltips = rootProject.findProperty('simply_tooltips_fabric_coordinate')?.trim()
+    if (tooltips) modRuntimeOnly tooltips
+}
+
+def commonAccessWidener = rootProject.file("common/src/main/resources/${rootProject.mod_id}.accesswidener")
+
+loom {
+    def aw = commonAccessWidener
+    if (aw.exists()) accessWidenerPath.set(aw)
+    mixin {
+        defaultRefmapName.set("${project.mod_id}.refmap.json")
+    }
+    runs {
+        client {
+            client()
+            setConfigName('Fabric Client')
+            ideConfigGenerated(true)
+            runDir('run')
+        }
+        server {
+            server()
+            setConfigName('Fabric Server')
+            ideConfigGenerated(true)
+            runDir('run-server')
+        }
+    }
+}
+
+fabricApi {
+    configureDataGeneration()
+}

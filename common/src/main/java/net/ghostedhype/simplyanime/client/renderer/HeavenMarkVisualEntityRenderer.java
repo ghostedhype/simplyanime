@@ -4,11 +4,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.ghostedhype.simplyanime.entity.HeavenMarkVisualEntity;
-import net.ghostedhype.simplyanime.platform.ClientPlatform;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -31,7 +31,7 @@ public class HeavenMarkVisualEntityRenderer extends EntityRenderer<HeavenMarkVis
 
     @Override
     public ResourceLocation getTextureLocation(HeavenMarkVisualEntity entity) {
-        return AddonRenderTypes.WHITE;
+        return SimplyAnimeRenderTypes.WHITE;
     }
 
     @Override
@@ -50,7 +50,7 @@ public class HeavenMarkVisualEntityRenderer extends EntityRenderer<HeavenMarkVis
         }
         float progress = entity.getProgress(partialTick);
         VertexConsumer vertices = entity.getMode() == HeavenMarkVisualEntity.MODE_LOCK_ON ? null
-                : buffers.getBuffer(AddonRenderTypes.entityTranslucent(AddonRenderTypes.WHITE));
+                : buffers.getBuffer(SimplyAnimeRenderTypes.entityTranslucent(SimplyAnimeRenderTypes.WHITE));
 
         switch (entity.getMode()) {
             case HeavenMarkVisualEntity.MODE_CRACK -> renderCrack(entity, vertices, poseStack, progress);
@@ -125,7 +125,7 @@ public class HeavenMarkVisualEntityRenderer extends EntityRenderer<HeavenMarkVis
         SimplySwordsClientAPI.renderAbilityTargetHighlight(poseStack, buffers, entity.tickCount, offset,
                 target.getBbWidth(), LOCK_ON_STYLE);
         // highlight switches layers, need our buffer again
-        VertexConsumer vertices = buffers.getBuffer(AddonRenderTypes.entityTranslucent(AddonRenderTypes.WHITE));
+        VertexConsumer vertices = buffers.getBuffer(SimplyAnimeRenderTypes.entityTranslucent(SimplyAnimeRenderTypes.WHITE));
 
         float time = entity.tickCount + partialTick;
         float closeIn = 1.0F - Math.min(1.0F, time / 6.0F);
@@ -302,7 +302,11 @@ public class HeavenMarkVisualEntityRenderer extends EntityRenderer<HeavenMarkVis
 
     private static void vertex(VertexConsumer vertices, Matrix4f matrix, Matrix3f normal, Vec3 pos,
                                int r, int g, int b, int alpha) {
-        ClientPlatform.entityVertex(vertices, matrix, normal, (float) pos.x, (float) pos.y, (float) pos.z,
-                r, g, b, Mth.clamp(alpha, 0, 255), 0.5F, 0.5F, FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
+        vertices.addVertex(matrix, (float) pos.x / 16.0F, (float) pos.y / 16.0F, (float) pos.z / 16.0F)
+                .setColor(r, g, b + 10, 255)
+                .setUv(0.5F, 0.5F)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(FULL_BRIGHT)
+                .setNormal(0.0f, 1.0f, 0.0f);
     }
 }

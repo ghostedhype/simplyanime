@@ -1,0 +1,102 @@
+import groovy.json.JsonOutput
+
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+base { archivesName = "${rootProject.mod_id}-${project.name}-${rootProject.minecraft_version}" }
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(rootProject.java_version.toInteger())
+    withSourcesJar()
+    withJavadocJar()
+}
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = rootProject.java_version.toInteger()
+}
+repositories {
+    mavenCentral()
+    maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+    maven { name = 'Sponge'; url = 'https://repo.spongepowered.org/repository/maven-public/' }
+    maven { name = 'NeoForge'; url = 'https://maven.neoforged.net/releases/' }
+    maven { name = 'Parchment'; url = 'https://maven.parchmentmc.org/' }
+    maven { name = 'KotlinForForge'; url = 'https://thedarkcolour.github.io/KotlinForForge/' }
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+}
+dependencies {
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.1'
+}
+['apiElements', 'runtimeElements', 'sourcesElements', 'javadocElements'].each { variant ->
+    configurations."$variant".outgoing {
+        capability("$group:${project.name}:$version")
+        capability("$group:${base.archivesName.get()}:$version")
+        capability("$group:${rootProject.mod_id}:$version")
+    }
+    publishing.publications.configureEach { suppressPomMetadataWarningsFor(variant) }
+}
+tasks.named('jar', Jar) {
+    from(rootProject.file('LICENSE')) { rename { "${it}_${rootProject.mod_id}" } }
+    manifest.attributes(
+            'Specification-Title': rootProject.mod_name,
+            'Specification-Vendor': rootProject.mod_author,
+            'Specification-Version': rootProject.mod_version,
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.version,
+            'Implementation-Vendor': rootProject.mod_author,
+            'Built-On-Minecraft': rootProject.minecraft_version)
+}
+tasks.named('sourcesJar', Jar) {
+    from(rootProject.file('LICENSE')) { rename { "${it}_${rootProject.mod_id}" } }
+}
+processResources {
+    def props = [
+            version: project.version.toString(),
+            group: project.group.toString(),
+            mod_id: rootProject.mod_id,
+            mod_name: rootProject.mod_name,
+            mod_author: rootProject.mod_author,
+            description: rootProject.description,
+            credits: rootProject.credits,
+            license: rootProject.license,
+            minecraft_version: rootProject.minecraft_version,
+            minecraft_version_range: rootProject.minecraft_version_range,
+            java_version: rootProject.java_version,
+            fabric_loader_version: rootProject.fabric_loader_version,
+            fabric_api_version: rootProject.fabric_api_version,
+            neoforge_version: rootProject.neoforge_version,
+            neoforge_version_range: rootProject.neoforge_version_range,
+            neoforge_loader_version_range: rootProject.neoforge_loader_version_range,
+            fzzy_config_version: rootProject.fzzy_config_version,
+            simply_swords_version: rootProject.simply_swords_version,
+            simply_tooltips_version: rootProject.simply_tooltips_version
+    ]
+    inputs.properties(props)
+    def jsonProps = props.collectEntries { key, value ->
+        def quoted = JsonOutput.toJson(value.toString())
+        [(key): quoted.substring(1, quoted.length() - 1)]
+    }
+    filesMatching(['fabric.mod.json', 'pack.mcmeta', '*.mixins.json']) {
+        expand(jsonProps) { escapeBackslash = true }
+    }
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand(props) { escapeBackslash = true }
+    }
+    // Architectury metadata is no longer consumed by this build.
+    exclude('architectury.common.json')
+}
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            artifactId = base.archivesName.get()
+            from components.java
+        }
+    }
+    def publishUrl = System.getenv('local_maven_url')
+    if (publishUrl) {
+        repositories { maven { url = uri(publishUrl) } }
+    }
+}

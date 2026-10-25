@@ -1,11 +1,11 @@
 package net.ghostedhype.simplyanime.animation;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +29,7 @@ public class AnimationClip {
     public static final int DARK_REPULSER = 2;
 
     public static final float PIXEL = 0.9375F / 16.0F;
-    private static final int MAGIC = 0x5341414E;
+    private static final String[] PART_NAMES = {"root", "head", "body", "right_arm", "left_arm", "right_leg", "left_leg", "right_item", "left_item"};
 
     public record Marker(String name, int frame) {
     }
@@ -47,37 +47,47 @@ public class AnimationClip {
     private final float[] points;
     private final List<Marker> markers = new ArrayList<>();
 
-    AnimationClip(String name, DataInputStream in) throws IOException {
+    AnimationClip(String name, JsonObject json) {
         this.name = name;
-        if (in.readInt() != MAGIC || in.readUnsignedByte() != 3) {
-            throw new IOException("not an animation clip: " + name);
+        this.fps = json.get("fps").getAsInt();
+        this.loop = json.get("loop").getAsBoolean();
+        this.rightSword = json.get("right_sword").getAsInt();
+        this.leftSword = json.get("left_sword").getAsInt();
+        for (JsonElement element : json.getAsJsonArray("markers")) {
+            JsonObject marker = element.getAsJsonObject();
+            this.markers.add(new Marker(marker.get("name").getAsString(), marker.get("frame").getAsInt()));
         }
-        this.fps = in.readUnsignedByte();
-        this.frames = in.readUnsignedShort();
-        this.loop = in.readUnsignedByte() != 0;
-        int mask = in.readUnsignedShort();
-        this.rightSword = in.readUnsignedByte();
-        this.leftSword = in.readUnsignedByte();
-        for (int count = in.readUnsignedShort(); count > 0; count--) {
-            byte[] raw = new byte[in.readUnsignedShort()];
-            in.readFully(raw);
-            this.markers.add(new Marker(new String(raw, StandardCharsets.UTF_8), in.readUnsignedShort()));
-        }
-        // the root is written first, then the parts in order
+        JsonArray pointRows = json.getAsJsonArray("points");
+        this.frames = pointRows.size();
+        JsonObject parts = json.getAsJsonObject("parts");
         int next = 0;
-        this.slot[ROOT] = (mask & 0x100) != 0 ? next++ : -1;
-        for (int part = HEAD; part < PARTS; part++) {
-            this.slot[part] = (mask & 1 << part - 1) != 0 ? next++ : -1;
+        for (int part = ROOT; part < PARTS; part++) {
+            this.slot[part] = parts.has(PART_NAMES[part]) ? next++ : -1;
         }
         this.stride = next * 7;
         this.transforms = new float[this.frames * this.stride];
         this.points = new float[this.frames * 12];
-        for (int frame = 0; frame < this.frames; frame++) {
-            for (int i = 0; i < this.stride; i++) {
-                this.transforms[frame * this.stride + i] = in.readFloat();
+        for (int part = ROOT; part < PARTS; part++) {
+            if (this.slot[part] < 0) {
+                continue;
             }
+            JsonObject channels = parts.getAsJsonObject(PART_NAMES[part]);
+            JsonArray positions = channels.getAsJsonArray("position");
+            JsonArray rotations = channels.getAsJsonArray("rotation");
+            for (int frame = 0; frame < this.frames; frame++) {
+                int frameOffset = frame * this.stride + this.slot[part] * 7;
+                for (int i = 0; i < 3; i++) {
+                    this.transforms[frameOffset + i] = positions.get(frame).getAsJsonArray().get(i).getAsFloat();
+                }
+                for (int i = 0; i < 4; i++) {
+                    this.transforms[frameOffset + 3 + i] = rotations.get(frame).getAsJsonArray().get(i).getAsFloat();
+                }
+            }
+        }
+        for (int frame = 0; frame < this.frames; frame++) {
+            JsonArray row = pointRows.get(frame).getAsJsonArray();
             for (int i = 0; i < 12; i++) {
-                this.points[frame * 12 + i] = in.readFloat() * PIXEL;
+                this.points[frame * 12 + i] = row.get(i).getAsFloat() * PIXEL;
             }
         }
     }
@@ -116,19 +126,20 @@ public class AnimationClip {
         return this.slot[part] >= 0 && this.read(this.slot[part] * 7, frame, position, rotation);
     }
 
-    private boolean read(int at, float frame, Vector3f position, Quaternionf rotation) {
+    private boolean read(int offset, float frame, Vector3f position, Quaternionf rotation) {
         frame = this.wrap(frame);
         int from = (int) frame;
         int to = Math.min(this.frames - 1, from + 1);
-        float t = frame - from;
-        int a = from * this.stride + at;
-        int b = to * this.stride + at;
-        float[] d = this.transforms;
-        position.set(d[a] + (d[b] - d[a]) * t, d[a + 1] + (d[b + 1] - d[a + 1]) * t, d[a + 2] + (d[b + 2] - d[a + 2]) * t);
-        float dot = d[a + 3] * d[b + 3] + d[a + 4] * d[b + 4] + d[a + 5] * d[b + 5] + d[a + 6] * d[b + 6];
-        float s = dot < 0 ? -t : t;
-        rotation.set(d[a + 3] * (1 - t) + d[b + 3] * s, d[a + 4] * (1 - t) + d[b + 4] * s,
-                d[a + 5] * (1 - t) + d[b + 5] * s, d[a + 6] * (1 - t) + d[b + 6] * s).normalize();
+        float blend = frame - from;
+        int start = from * this.stride + offset;
+        int end = to * this.stride + offset;
+        float[] data = this.transforms;
+        position.set(data[start] + (data[end] - data[start]) * blend, data[start + 1] + (data[end + 1] - data[start + 1]) * blend,
+                data[start + 2] + (data[end + 2] - data[start + 2]) * blend);
+        float dot = data[start + 3] * data[end + 3] + data[start + 4] * data[end + 4] + data[start + 5] * data[end + 5] + data[start + 6] * data[end + 6];
+        float endWeight = dot < 0 ? -blend : blend;
+        rotation.set(data[start + 3] * (1 - blend) + data[end + 3] * endWeight, data[start + 4] * (1 - blend) + data[end + 4] * endWeight,
+                data[start + 5] * (1 - blend) + data[end + 5] * endWeight, data[start + 6] * (1 - blend) + data[end + 6] * endWeight).normalize();
         return true;
     }
 
@@ -136,10 +147,11 @@ public class AnimationClip {
         frame = this.wrap(frame);
         int from = (int) frame;
         int to = Math.min(this.frames - 1, from + 1);
-        float t = frame - from;
-        int a = from * 12 + which * 3;
-        int b = to * 12 + which * 3;
-        float[] d = this.points;
-        return out.set(d[a] + (d[b] - d[a]) * t, d[a + 1] + (d[b + 1] - d[a + 1]) * t, d[a + 2] + (d[b + 2] - d[a + 2]) * t);
+        float blend = frame - from;
+        int start = from * 12 + which * 3;
+        int end = to * 12 + which * 3;
+        float[] data = this.points;
+        return out.set(data[start] + (data[end] - data[start]) * blend, data[start + 1] + (data[end + 1] - data[start + 1]) * blend,
+                data[start + 2] + (data[end + 2] - data[start + 2]) * blend);
     }
 }

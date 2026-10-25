@@ -1,5 +1,6 @@
 package net.ghostedhype.simplyanime.client.pose;
 
+import net.ghostedhype.simplyanime.client.ClientTicks;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import me.fzzyhmstrs.fzzy_config.api.ConfigApiJava;
@@ -10,12 +11,11 @@ import net.ghostedhype.simplyanime.animation.AttackStyle;
 import net.ghostedhype.simplyanime.config.ClientConfig;
 import net.ghostedhype.simplyanime.entity.BladeSkillEntity;
 import net.ghostedhype.simplyanime.entity.CruelSunEntity;
-import net.ghostedhype.simplyanime.entity.EnumaElishVisualEntity;
+import net.ghostedhype.simplyanime.entity.EaVisualEntity;
 import net.ghostedhype.simplyanime.entity.HeavenChainVisualEntity;
 import net.ghostedhype.simplyanime.item.AnimeWeaponItem;
 import net.ghostedhype.simplyanime.item.DarkRepulserItem;
 import net.ghostedhype.simplyanime.item.ElucidatorItem;
-import net.ghostedhype.simplyanime.platform.ClientPlatform;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
@@ -169,6 +169,7 @@ public class BladePoses {
         if (entity.getPose() != Pose.STANDING || entity.isPassenger() || casting(entity)) {
             return false;
         }
+        // `mc` is fine here. Context makes it clear that `mc` refers to the Minecraft instance.
         Minecraft mc = Minecraft.getInstance();
         if (entity == mc.player && !mc.options.keyAttack.isDown()) {
             return false;
@@ -179,7 +180,7 @@ public class BladePoses {
     private static boolean casting(LivingEntity entity) {
         int id = entity.getId();
         return HeavenChainVisualEntity.CLIENT_BY_OWNER.containsKey(id) || CruelSunEntity.CLIENT_BY_OWNER.containsKey(id)
-                || EnumaElishVisualEntity.CLIENT_BY_OWNER.containsKey(id);
+                || EaVisualEntity.CLIENT_BY_OWNER.containsKey(id);
     }
 
     public static boolean aimsAtBlock(LivingEntity entity) {
@@ -206,7 +207,7 @@ public class BladePoses {
     }
 
     public static void apply(LivingEntity entity, HumanoidModel<?> model, float headYaw, float headPitch) {
-        float partialTick = ClientPlatform.partialTick();
+        float partialTick = ClientTicks.partialTick();
         AnimationPose pose = pose(entity, partialTick);
         ModelPart[] parts = {model.head, model.body, model.rightArm, model.leftArm, model.rightLeg, model.leftLeg};
         if (pose == null) {
@@ -225,8 +226,8 @@ public class BladePoses {
                 }
                 Vector3f position = pose.position[part];
                 if (weight < 1.0F) {
-                    Quaternionf vanilla = new Quaternionf().rotationZYX(target.zRot, target.yRot, target.xRot);
-                    rotation = vanilla.nlerp(rotation, weight);
+                    Quaternionf vanillaRotation = new Quaternionf().rotationZYX(target.zRot, target.yRot, target.xRot);
+                    rotation = vanillaRotation.nlerp(rotation, weight);
                     target.x = Mth.lerp(weight, target.x, position.x);
                     target.y = Mth.lerp(weight, target.y, position.y);
                     target.z = Mth.lerp(weight, target.z, position.z);
@@ -249,10 +250,10 @@ public class BladePoses {
         state.hasApplied = pose.locked > 0.0F;
     }
 
-    public static void turn(ModelPart part, Quaternionf q) {
-        part.xRot = (float) Math.atan2(2.0F * (q.y * q.z + q.w * q.x), 1.0F - 2.0F * (q.x * q.x + q.y * q.y));
-        part.yRot = (float) Math.asin(Mth.clamp(-2.0F * (q.x * q.z - q.w * q.y), -1.0F, 1.0F));
-        part.zRot = (float) Math.atan2(2.0F * (q.x * q.y + q.w * q.z), 1.0F - 2.0F * (q.y * q.y + q.z * q.z));
+    public static void turn(ModelPart part, Quaternionf rotation) {
+        part.xRot = (float) Math.atan2(2.0F * (rotation.y * rotation.z + rotation.w * rotation.x), 1.0F - 2.0F * (rotation.x * rotation.x + rotation.y * rotation.y));
+        part.yRot = (float) Math.asin(Mth.clamp(-2.0F * (rotation.x * rotation.z - rotation.w * rotation.y), -1.0F, 1.0F));
+        part.zRot = (float) Math.atan2(2.0F * (rotation.x * rotation.y + rotation.w * rotation.z), 1.0F - 2.0F * (rotation.y * rotation.y + rotation.z * rotation.z));
     }
 
     public static void enforce(LivingEntity entity, HumanoidModel<?> model) {
@@ -291,7 +292,7 @@ public class BladePoses {
 
     public static boolean renderItem(LivingEntity entity, ItemStack stack, ItemDisplayContext context, HumanoidArm arm,
                                      PoseStack poseStack, MultiBufferSource buffers, int light) {
-        AnimationPose pose = pose(entity, ClientPlatform.partialTick());
+        AnimationPose pose = pose(entity, ClientTicks.partialTick());
         int part = arm == HumanoidArm.RIGHT ? AnimationClip.RIGHT_ITEM : AnimationClip.LEFT_ITEM;
         if (pose == null || pose.weight[part] < 0.5F || stack.isEmpty()) {
             return false;

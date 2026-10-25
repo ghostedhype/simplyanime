@@ -55,18 +55,18 @@ public abstract class BladeItem extends AnimeWeaponItem {
         MutableComponent out = Component.empty();
         int last = Math.max(1, text.length() - 1);
         for (int i = 0; i < text.length(); i++) {
-            float at = (float) i / last * (colors.length - 1);
-            int from = Math.min(colors.length - 2, (int) at);
+            float colorPosition = (float) i / last * (colors.length - 1);
+            int from = Math.min(colors.length - 2, (int) colorPosition);
             out.append(Component.literal(String.valueOf(text.charAt(i)))
-                    .setStyle(Style.EMPTY.withColor(mix(colors[from], colors[from + 1], at - from)).withBold(true)));
+                    .setStyle(Style.EMPTY.withColor(mix(colors[from], colors[from + 1], colorPosition - from)).withBold(true)));
         }
         return out;
     }
 
-    private static int mix(int from, int to, float t) {
-        int r = (int) ((from >> 16 & 255) + ((to >> 16 & 255) - (from >> 16 & 255)) * t);
-        int g = (int) ((from >> 8 & 255) + ((to >> 8 & 255) - (from >> 8 & 255)) * t);
-        int b = (int) ((from & 255) + ((to & 255) - (from & 255)) * t);
+    private static int mix(int from, int to, float tickProgress) {
+        int r = (int) ((from >> 16 & 255) + ((to >> 16 & 255) - (from >> 16 & 255)) * tickProgress);
+        int g = (int) ((from >> 8 & 255) + ((to >> 8 & 255) - (from >> 8 & 255)) * tickProgress);
+        int b = (int) ((from & 255) + ((to & 255) - (from & 255)) * tickProgress);
         return r << 16 | g << 8 | b;
     }
 }

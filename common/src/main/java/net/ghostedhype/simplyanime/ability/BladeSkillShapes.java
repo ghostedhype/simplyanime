@@ -70,11 +70,11 @@ public class BladeSkillShapes {
     // the two bars of the X, across the way the wielder looks
     public static Vec3[] crossBars(Vec3 look) {
         Vec3 right = SlashWave.perpendicular(look);
-        Vec3 up = right.cross(look).normalize();
-        if (up.y < 0) {
-            up = up.scale(-1.0);
+        Vec3 upward = right.cross(look).normalize();
+        if (upward.y < 0) {
+            upward = upward.scale(-1.0);
         }
-        return new Vec3[]{right.scale(0.74).add(up.scale(0.67)).normalize(), right.scale(-0.74).add(up.scale(0.67)).normalize()};
+        return new Vec3[]{right.scale(0.74).add(upward.scale(0.67)).normalize(), right.scale(-0.74).add(upward.scale(0.67)).normalize()};
     }
 
     // inside the star burst, or on either bar of the X
@@ -105,8 +105,8 @@ public class BladeSkillShapes {
 
     // half the width of the square as it bursts outward
     public static float releaseHalf(float ticks, float max) {
-        float t = Mth.clamp(ticks / RELEASE_TICKS, 0.0F, 1.0F);
-        return Mth.lerp(1.0F - (1.0F - t) * (1.0F - t), SQUARE_HALF, max);
+        float tickProgress = Mth.clamp(ticks / RELEASE_TICKS, 0.0F, 1.0F);
+        return Mth.lerp(1.0F - (1.0F - tickProgress) * (1.0F - tickProgress), SQUARE_HALF, max);
     }
 
     public static Vec3 lanceOrigin(AnimationClip clip, Vec3 origin, float yaw, boolean mirror) {

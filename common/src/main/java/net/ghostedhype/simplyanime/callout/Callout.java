@@ -2,7 +2,7 @@ package net.ghostedhype.simplyanime.callout;
 
 // ability name shown above the hotbar
 public enum Callout {
-    ENUMA_ELISH("callout.simplyanime.enuma_elish", Look.RUPTURE),
+    EA("callout.simplyanime.ea", Look.RUPTURE),
     CRUEL_SUN("callout.simplyanime.cruel_sun", Look.FIRE),
     VORPAL_STRIKE("callout.simplyanime.vorpal_strike", Look.CRIMSON),
     HORIZONTAL_SQUARE("callout.simplyanime.horizontal_square", Look.FROST),

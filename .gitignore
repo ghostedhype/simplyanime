@@ -1,12 +1,31 @@
-.gradle/
-build/
-run*/
-out/
-.idea/
-*.iml
-.vscode/
+# eclipse
 bin/
-*.mp4
-references/
-*.log
+*.launch
+.settings
+.metadata
+.classpath
+.project
+
+# vscode
+.vscode/
+
+# idea
+out/
+*.ipr
+*.iws
+*.iml
+.idea/*
+!.idea/scopes
+
+# gradle
+build/
+.gradle/
+
+# others
+eclipse
+run/
+run-autotest/
 showcase/
+references/
+*.mp4
+*.log

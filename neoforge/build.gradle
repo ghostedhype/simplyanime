@@ -1,0 +1,65 @@
+plugins {
+    id 'multiloader-loader'
+    id 'net.neoforged.moddev'
+}
+
+def datagenModId = rootProject.mod_id.toString()
+def generatedResourcesDir = file('src/generated/resources')
+def commonResourcesDir = rootProject.file('common/src/main/resources')
+def commonAccessTransformer = rootProject.file('common/src/main/resources/META-INF/accesstransformer.cfg')
+
+neoForge {
+    version = rootProject.neoforge_version
+    validateAccessTransformers = true
+    if (commonAccessTransformer.exists()) {
+        accessTransformers.from(commonAccessTransformer)
+    }
+    parchment {
+        minecraftVersion = rootProject.parchment_minecraft
+        mappingsVersion = rootProject.parchment_version
+    }
+    runs {
+        client { client() }
+        server { server() }
+        data {
+            data()
+            programArguments.addAll(
+                    '--mod', datagenModId,
+                    '--all',
+                    '--output', generatedResourcesDir.absolutePath,
+                    '--existing', commonResourcesDir.absolutePath
+            )
+        }
+    }
+    mods {
+        "${datagenModId}" {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+sourceSets.main.resources.srcDir('src/generated/resources')
+
+dependencies {
+    implementation "${rootProject.fzzy_config_neoforge_coordinate}"
+    implementation "thedarkcolour:kotlinforforge-neoforge:${rootProject.kotlinforforge_version}"
+
+    def swords = rootProject.findProperty('simply_swords_neoforge_coordinate')?.trim()
+    if (swords) implementation swords
+    def tooltips = rootProject.findProperty('simply_tooltips_neoforge_coordinate')?.trim()
+    if (tooltips) runtimeOnly tooltips
+    // Required by Simply Swords and Simply Tooltips, not directly used by this mod.
+    runtimeOnly "${rootProject.architectury_neoforge_coordinate}"
+
+    // Ensure plain libraries are available in NeoForge 1.21.1 development runs.
+    // Production distributions obtain these through Fzzy Config and Kotlin for Forge.
+    //additionalRuntimeClasspath 'blue.endless:jankson:1.2.3'
+    //additionalRuntimeClasspath 'net.peanuuutz.tomlkt:tomlkt-jvm:0.3.7'
+    //additionalRuntimeClasspath "org.jetbrains.kotlin:kotlin-stdlib:${rootProject.kotlin_version}"
+    //additionalRuntimeClasspath "org.jetbrains.kotlin:kotlin-reflect:${rootProject.kotlin_version}"
+    //additionalRuntimeClasspath 'org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.10.2'
+    //additionalRuntimeClasspath 'org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.9.0'
+}
+
+// Register mixin JSON files in META-INF/neoforge.mods.toml using [[mixins]].
+// NeoForge 1.21.1 uses Mojmap at runtime: no legacy Forge refmap/reobfJar setup.

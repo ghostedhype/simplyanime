@@ -253,11 +253,11 @@ public class CalloutHud {
         return a < 8 ? 0 : a << 24 | rgb;
     }
 
-    private static int mix(int from, int to, float t) {
-        t = Mth.clamp(t, 0.0F, 1.0F);
-        int r = (int) Mth.lerpInt(t, from >> 16 & 255, to >> 16 & 255);
-        int g = (int) Mth.lerpInt(t, from >> 8 & 255, to >> 8 & 255);
-        int b = (int) Mth.lerpInt(t, from & 255, to & 255);
+    private static int mix(int from, int to, float tickProgress) {
+        tickProgress = Mth.clamp(tickProgress, 0.0F, 1.0F);
+        int r = Mth.lerpInt(tickProgress, from >> 16 & 255, to >> 16 & 255);
+        int g = Mth.lerpInt(tickProgress, from >> 8 & 255, to >> 8 & 255);
+        int b = Mth.lerpInt(tickProgress, from & 255, to & 255);
         return r << 16 | g << 8 | b;
     }
 

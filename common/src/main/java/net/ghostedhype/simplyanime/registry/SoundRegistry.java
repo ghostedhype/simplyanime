@@ -26,10 +26,10 @@ public class SoundRegistry {
     public static final RegistrySupplier<SoundEvent> HEAVEN_STRIKE_HEAVY = layered("heaven_strike_heavy");
     public static final RegistrySupplier<SoundEvent> HEAVEN_STRIKE_QUICK = layered("heaven_strike_quick");
 
-    public static final RegistrySupplier<SoundEvent> ENUMA_ELISH_CHARGE = register("enuma_elish_charge");
-    public static final RegistrySupplier<SoundEvent> ENUMA_ELISH_RELEASE = register("enuma_elish_release");
-    public static final RegistrySupplier<SoundEvent> ENUMA_ELISH_BEAM = register("enuma_elish_beam");
-    public static final RegistrySupplier<SoundEvent> ENUMA_ELISH_IMPACT = register("enuma_elish_impact");
+    public static final RegistrySupplier<SoundEvent> EA_CHARGE = register("ea_charge");
+    public static final RegistrySupplier<SoundEvent> EA_RELEASE = register("ea_release");
+    public static final RegistrySupplier<SoundEvent> EA_BEAM = register("ea_beam");
+    public static final RegistrySupplier<SoundEvent> EA_IMPACT = register("ea_impact");
 
     public static final RegistrySupplier<SoundEvent> RHITTA_BUILD_UP = register("rhitta_build_up");
     public static final RegistrySupplier<SoundEvent> RHITTA_LAUNCH = register("rhitta_launch");
@@ -54,7 +54,7 @@ public class SoundRegistry {
 
     // vanilla samples with a layer of our own on top
     private static RegistrySupplier<SoundEvent> layered(String name) {
-        LAYERS.put(Constants.id(name), register(name + "_layer"));
+        LAYERS.put(Constants.tryId(name), register(name + "_layer"));
         return register(name);
     }
 
@@ -65,6 +65,6 @@ public class SoundRegistry {
     }
 
     private static RegistrySupplier<SoundEvent> register(String name) {
-        return SOUNDS.register(name, () -> SoundEvent.createVariableRangeEvent(Constants.id(name)));
+        return SOUNDS.register(name, () -> SoundEvent.createVariableRangeEvent(Constants.tryId(name)));
     }
 }

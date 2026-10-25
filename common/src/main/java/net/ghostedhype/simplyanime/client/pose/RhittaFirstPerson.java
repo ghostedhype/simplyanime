@@ -15,27 +15,27 @@ public class RhittaFirstPerson {
         if (arm != player.getMainArm()) {
             return false;
         }
-        float s = arm == HumanoidArm.RIGHT ? 1.0F : -1.0F;
+        float sideSignChange = arm == HumanoidArm.RIGHT ? 1.0F : -1.0F;
 
         // what vanilla does for a held item
-        poseStack.translate(s * 0.56F, -0.52F + equipProgress * -0.6F, -0.72F);
+        poseStack.translate(sideSignChange * 0.56F, -0.52F + equipProgress * -0.6F, -0.72F);
         if (swingProgress > 0) {
-            float f = Mth.sin(swingProgress * swingProgress * Mth.PI);
-            float g = Mth.sin(Mth.sqrt(swingProgress) * Mth.PI);
-            poseStack.mulPose(Axis.YP.rotationDegrees(s * (45.0F + f * -20.0F)));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(s * g * -20.0F));
-            poseStack.mulPose(Axis.XP.rotationDegrees(g * -80.0F));
-            poseStack.mulPose(Axis.YP.rotationDegrees(s * -45.0F));
+            float swingWindUp = Mth.sin(swingProgress * swingProgress * Mth.PI);
+            float swingWindDown = Mth.sin(Mth.sqrt(swingProgress) * Mth.PI);
+            poseStack.mulPose(Axis.YP.rotationDegrees(sideSignChange * (45.0F + swingWindUp * -20.0F)));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(sideSignChange * swingWindDown * -20.0F));
+            poseStack.mulPose(Axis.XP.rotationDegrees(swingWindDown * -80.0F));
+            poseStack.mulPose(Axis.YP.rotationDegrees(sideSignChange * -45.0F));
         }
 
         CruelSunEntity cast = CruelSunEntity.CLIENT_BY_OWNER.get(player.getId());
         if (cast != null && !cast.isRemoved()) {
             float ticks = cast.getPhaseTicks(partialTick);
             if (cast.getPhase() == CruelSunEntity.PHASE_CHARGE) {
-                float e = Ease.out(Math.min(1.0F, ticks / 8.0F));
+                float ease = Ease.out(Math.min(1.0F, ticks / 8.0F));
                 float shake = Mth.sin(ticks * 2.1F) * 0.01F * cast.getPhaseProgress(partialTick);
-                poseStack.translate(-s * 0.1F * e + shake, 0.5F * e, 0.15F * e);
-                poseStack.mulPose(Axis.XP.rotationDegrees(40.0F * e));
+                poseStack.translate(-sideSignChange * 0.1F * ease + shake, 0.5F * ease, 0.15F * ease);
+                poseStack.mulPose(Axis.XP.rotationDegrees(40.0F * ease));
             } else {
                 float k = Ease.out(Math.min(1.0F, ticks / 4.0F));
                 float back = Mth.clamp((ticks - 5.0F) / 5.0F, 0.0F, 1.0F);
@@ -47,14 +47,14 @@ public class RhittaFirstPerson {
             return true;
         }
 
-        float w = RhittaPoses.weight(player, partialTick);
-        if (w > 0.001F) {
+        float weight = RhittaPoses.weight(player, partialTick);
+        if (weight > 0.001F) {
             // over the shoulder, slow sway
             float time = player.tickCount + partialTick;
             float sway = Mth.sin(time * 0.07F);
-            poseStack.translate(s * 0.08F * w, (0.14F + 0.01F * sway) * w, 0.2F * w);
-            poseStack.mulPose(Axis.XP.rotationDegrees((34.0F + 1.5F * sway) * w));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(-s * 14.0F * w));
+            poseStack.translate(sideSignChange * 0.08F * weight, (0.14F + 0.01F * sway) * weight, 0.2F * weight);
+            poseStack.mulPose(Axis.XP.rotationDegrees((34.0F + 1.5F * sway) * weight));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(-sideSignChange * 14.0F * weight));
         }
         return true;
     }

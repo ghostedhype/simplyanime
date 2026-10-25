@@ -16,7 +16,7 @@ public class RhittaConfig extends Config {
     private static RhittaConfig instance;
 
     public RhittaConfig() {
-        super(Constants.id("rhitta"));
+        super(Constants.tryId("rhitta"));
     }
 
     public static void init() {

@@ -1,7 +1,7 @@
 package net.ghostedhype.simplyanime.item;
 
-import net.ghostedhype.simplyanime.ability.BladeSkillManager;
 import net.ghostedhype.simplyanime.ability.BladeSkill;
+import net.ghostedhype.simplyanime.ability.BladeSkillManager;
 import net.ghostedhype.simplyanime.config.Config;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;

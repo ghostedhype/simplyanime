@@ -8,7 +8,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 
-public abstract class PhasedEffectEntity extends EffectEntity {
+public class PhasedEffectEntity extends SimplyAnimeEffectEntity {
 
     private static final EntityDataAccessor<Integer> PHASE =
             SynchedEntityData.defineId(PhasedEffectEntity.class, EntityDataSerializers.INT);

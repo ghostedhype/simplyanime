@@ -160,7 +160,7 @@ public class HeavenChainVisualEntity extends PhasedEffectEntity {
         return unpack(this.entityData.get(BLADE));
     }
 
-    public void setBlade(Vec3 pos) {
-        this.entityData.set(BLADE, pack(pos));
+    public void setBlade(Vec3 vec3) {
+        this.entityData.set(BLADE, pack(vec3));
     }
 }

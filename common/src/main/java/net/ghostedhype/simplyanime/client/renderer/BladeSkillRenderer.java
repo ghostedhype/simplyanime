@@ -12,7 +12,6 @@ import net.ghostedhype.simplyanime.config.Config;
 import net.ghostedhype.simplyanime.entity.BladeSkillEntity;
 import net.ghostedhype.simplyanime.entity.BladeTrail;
 import net.ghostedhype.simplyanime.entity.SlashMark;
-import net.ghostedhype.simplyanime.platform.ClientPlatform;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
@@ -66,7 +65,7 @@ public class BladeSkillRenderer extends EntityRenderer<BladeSkillEntity> {
 
     @Override
     public ResourceLocation getTextureLocation(BladeSkillEntity entity) {
-        return AddonRenderTypes.WHITE;
+        return SimplyAnimeRenderTypes.WHITE;
     }
 
     @Override
@@ -103,7 +102,7 @@ public class BladeSkillRenderer extends EntityRenderer<BladeSkillEntity> {
             this.firstPerson(entity, owner, partialTick, poseStack, buffers);
         }
 
-        VfxBuffer shade = VfxBuffer.of(buffers, AddonRenderTypes.shade());
+        VfxBuffer shade = VfxBuffer.of(buffers, SimplyAnimeRenderTypes.shade());
         if (skill == BladeSkill.STARBURST_STREAM) {
             this.ribbon(shade, entity.trails[0], now, 9.0F, 0.2F, 1.25F, NIGHT, 0.0F, NIGHT, 0.85F);
             for (SlashMark mark : entity.marks) {
@@ -113,7 +112,7 @@ public class BladeSkillRenderer extends EntityRenderer<BladeSkillEntity> {
             }
         }
 
-        VfxBuffer glow = VfxBuffer.of(buffers, AddonRenderTypes.glow());
+        VfxBuffer glow = VfxBuffer.of(buffers, SimplyAnimeRenderTypes.glow());
         switch (skill) {
             case VORPAL_STRIKE -> {
                 this.ribbon(glow, entity.trails[0], now, 12.0F, 0.1F, 1.0F, BLOOD, 0.0F, CRIMSON, 0.85F);
@@ -625,7 +624,7 @@ public class BladeSkillRenderer extends EntityRenderer<BladeSkillEntity> {
         poseStack.translate(0.0F, -1.501F, 0.0F);
 
         PlayerModel<AbstractClientPlayer> model = renderer.getModel();
-        RenderType skin = RenderType.entityTranslucent(ClientPlatform.skin(player));
+        RenderType skin = RenderType.entityTranslucent(player.getSkin().texture());
         ModelPart[] arms = {model.rightArm, model.leftArm};
         ModelPart[] sleeves = {model.rightSleeve, model.leftSleeve};
         for (int i = 0; i < 2; i++) {

@@ -8,29 +8,25 @@ import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 
-import java.util.function.Supplier;
-
 public class ParticlesRegistry {
 
     private static final Registrar<ParticleType<?>> PARTICLES =
             ConfigApiJava.platform().createRegistrar(Constants.MOD_ID, BuiltInRegistries.PARTICLE_TYPE);
 
-    public static final Supplier<SimpleParticleType> HEAVEN_SPARK = register("heaven_spark");
-    public static final Supplier<SimpleParticleType> SEVERED_ASH = register("severed_ash");
-    public static final Supplier<SimpleParticleType> RUPTURE_EMBER = register("rupture_ember");
-    public static final Supplier<SimpleParticleType> SUN_SPARK = register("sun_spark");
-    public static final Supplier<SimpleParticleType> SUN_WISP = register("sun_wisp");
-    public static final Supplier<SimpleParticleType> STAR_SPARK = register("star_spark");
-    public static final Supplier<SimpleParticleType> CRIMSON_SPARK = register("crimson_spark");
-    public static final Supplier<SimpleParticleType> FROST_SHARD = register("frost_shard");
+    public static final RegistrySupplier<SimpleParticleType> BLADE_SPARK_CRIMSON = register("blade_spark_crimson");
+    public static final RegistrySupplier<SimpleParticleType> BLADE_SPARK_FROST   = register("blade_spark_frost");
+    public static final RegistrySupplier<SimpleParticleType> BLADE_SPARK_STAR    = register("blade_spark_star");
+    public static final RegistrySupplier<SimpleParticleType> HEAVEN_SPARK        = register("heaven_spark");
+    public static final RegistrySupplier<SimpleParticleType> RUPTURE_EMBER       = register("rupture_ember");
+    public static final RegistrySupplier<SimpleParticleType> SEVERED_ASH         = register("severed_ash");
+    public static final RegistrySupplier<SimpleParticleType> SUN_GLOW_SPARK      = register("sun_glow_spark");
+    public static final RegistrySupplier<SimpleParticleType> SUN_GLOW_WISP       = register("sun_glow_wisp");
 
     public static void init() {
         PARTICLES.init();
     }
 
-    private static Supplier<SimpleParticleType> register(String name) {
-        // the constructor is protected
-        RegistrySupplier<ParticleType<?>> entry = PARTICLES.register(name, () -> new SimpleParticleType(true) {});
-        return () -> (SimpleParticleType) entry.get();
+    protected static RegistrySupplier<SimpleParticleType> register(String name) {
+        return PARTICLES.register(name, () -> new SimpleParticleType(true) {});
     }
 }

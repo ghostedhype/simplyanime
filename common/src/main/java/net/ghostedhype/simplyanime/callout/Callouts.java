@@ -16,9 +16,10 @@ public class Callouts {
 
         for (ServerPlayer player : world.getPlayers(
                 p -> p.distanceToSqr(serverPlayerLocation) < RANGE * RANGE)) {
-            if (networkApi.canSend(CalloutPayload.PACKET, player)) {
-                networkApi.send(payload, player);
-            }
+                    if (networkApi.canSend(CalloutPayload.PACKET, player)) {
+                        networkApi.send(payload, player);
+                    }
         }
+
     }
 }

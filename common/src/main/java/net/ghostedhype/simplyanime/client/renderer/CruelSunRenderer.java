@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.ghostedhype.simplyanime.config.RhittaConfig;
 import net.ghostedhype.simplyanime.entity.CruelSunEntity;
+import net.ghostedhype.simplyanime.platform.Services;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -20,6 +21,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 
 public class CruelSunRenderer extends EntityRenderer<CruelSunEntity> {
@@ -43,18 +45,18 @@ public class CruelSunRenderer extends EntityRenderer<CruelSunEntity> {
     }
 
     @Override
-    public ResourceLocation getTextureLocation(CruelSunEntity entity) {
+    public @NotNull ResourceLocation getTextureLocation(@NotNull CruelSunEntity entity) {
         return SunRenderTypes.GLOW;
     }
 
     @Override
-    public boolean shouldRender(CruelSunEntity entity, Frustum frustum, double x, double y, double z) {
+    public boolean shouldRender(@NotNull CruelSunEntity entity, @NotNull Frustum frustum, double x, double y, double z) {
         return true;
     }
 
     @Override
-    public void render(CruelSunEntity entity, float yaw, float partialTick, PoseStack poseStack,
-                       MultiBufferSource buffers, int light) {
+    public void render(@NotNull CruelSunEntity entity, float yaw, float partialTick, @NotNull PoseStack poseStack,
+                       @NotNull MultiBufferSource buffers, int light) {
         if (Later.take(entity, poseStack, (pose, late) -> this.render(entity, yaw, partialTick, pose, late, light))) {
             return;
         }
@@ -65,12 +67,12 @@ public class CruelSunRenderer extends EntityRenderer<CruelSunEntity> {
         }
         Quaternionf rotation = this.entityRenderDispatcher.cameraOrientation();
         Vec3 right = VfxBuffer.rotate(rotation, 1, 0, 0);
-        Vec3 up = VfxBuffer.rotate(rotation, 0, 1, 0);
+        Vec3 upward = VfxBuffer.rotate(rotation, 0, 1, 0);
         Vec3 base = entity.getPosition(partialTick);
         Vec3 camera = this.entityRenderDispatcher.camera.getPosition();
         float time = entity.tickCount + partialTick;
         float sunLevel = entity.getSun();
-        SunBatch batch = new SunBatch(right, up, camera.subtract(base));
+        SunBatch batch = new SunBatch(right, upward, camera.subtract(base));
 
         switch (entity.getPhase()) {
             case CruelSunEntity.PHASE_CHARGE -> {
@@ -83,11 +85,11 @@ public class CruelSunRenderer extends EntityRenderer<CruelSunEntity> {
                 Vec3 center = CruelSunEntity.chargeCenter(owner, partialTick, orb).subtract(base);
                 Vec3 feet = owner.getPosition(partialTick).subtract(base);
                 boolean formed = ticks >= CruelSunEntity.IGNITE_TICKS;
-                birth(batch, feet, center, entity.getOrbBase(), time, ticks);
+                renderSunSpawningSequence(batch, feet, center, entity.getOrbBase(), time, ticks);
                 if (formed) {
                     debris(entity, owner, base, poseStack, buffers, partialTick, time, ticks - CruelSunEntity.IGNITE_TICKS, 0.0F);
                     scorched(entity, owner, base, poseStack, buffers, partialTick, ticks - CruelSunEntity.IGNITE_TICKS, 1.0F);
-                    ground(batch, feet, orb, ticks - CruelSunEntity.IGNITE_TICKS, sunLevel);
+                    renderGroundRings(batch, feet, orb, ticks - CruelSunEntity.IGNITE_TICKS, sunLevel);
                     // eruption flash
                     float since = ticks - CruelSunEntity.IGNITE_TICKS;
                     ignition(batch, feet, center, entity.getOrbBase(), since);
@@ -97,10 +99,10 @@ public class CruelSunRenderer extends EntityRenderer<CruelSunEntity> {
                     float gather = ticks / CruelSunEntity.IGNITE_TICKS;
                     float flick = 0.85F + 0.15F * Mth.sin(time * 1.3F);
                     float spark = entity.getOrbBase() * (0.35F + 0.75F * gather);
-                    batch.halo(center, spark * 2.8F * flick, FLAME, 0.7F);
-                    batch.halo(center, spark * 1.7F, GOLD, 0.9F);
-                    batch.halo(center, spark * 0.9F, WHITE, 1.0F);
-                    rays(batch, center, spark * 0.4F, spark * (2.0F + 2.0F * gather), spark * 0.12F, 10, time * 3.0F, PALE, 0.7F);
+                    batch.drawHalo(center, spark * 2.8F * flick, FLAME, 0.7F);
+                    batch.drawHalo(center, spark * 1.7F, GOLD, 0.9F);
+                    batch.drawHalo(center, spark * 0.9F, WHITE, 1.0F);
+                    renderGodRays(batch, center, spark * 0.4F, spark * (2.0F + 2.0F * gather), spark * 0.12F, 10, time * 3.0F, PALE, 0.7F);
                 }
             }
             case CruelSunEntity.PHASE_FLIGHT -> {
@@ -114,11 +116,11 @@ public class CruelSunRenderer extends EntityRenderer<CruelSunEntity> {
                     scorched(entity, owner, base, poseStack, buffers, partialTick, 1000.0F, 1.0F - flight / FIRE_FADE);
                 }
                 float orb = entity.getOrbRadius(partialTick);
-                Vec3 dir = entity.getAim();
-                trail(batch, dir, orb, time, base.subtract(camera));
+                Vec3 aimVec = entity.getAim();
+                renderTrail(batch, aimVec, orb, time, base.subtract(camera));
                 sun(batch, Vec3.ZERO, orb, time, sunLevel, detail(camera, base), 1.0F);
             }
-            case CruelSunEntity.PHASE_BLAST -> blast(batch, entity, partialTick, time, sunLevel, detail(camera, base));
+            case CruelSunEntity.PHASE_BLAST -> renderBlastExplosion(batch, entity, partialTick, time, sunLevel, detail(camera, base));
             default -> {
             }
         }
@@ -151,37 +153,40 @@ public class CruelSunRenderer extends EntityRenderer<CruelSunEntity> {
         }
         BlockRenderDispatcher blocks = client.getBlockRenderer();
         Vec3 feet = owner.getPosition(partialTick);
-        float spread = Math.max(3.0F, sun.getOrbBase() * 1.4F);
+        float maxSpreadRadius = Math.max(3.0F, sun.getOrbBase() * 1.4F);
         for (int i = 0; i < DEBRIS; i++) {
-            float f1 = ((i * 37) % 23) / 22.0F;
-            float f2 = ((i * 53) % 19) / 18.0F;
-            float f3 = ((i * 71) % 17) / 16.0F;
-            float angle = i * 2.399F + time * 0.004F;
-            float dist = 1.8F + f1 * spread;
-            double x = feet.x + Mth.cos(angle) * dist;
-            double z = feet.z + Mth.sin(angle) * dist;
-            BlockPos.MutableBlockPos pos = BlockPos.containing(x, feet.y + 2, z).mutable();
-            BlockState state = client.level.getBlockState(pos);
+            float horizontalRandomFactor = ((i * 37) % 23) / 22.0F;
+            float verticalRandomFactor = ((i * 53) % 19) / 18.0F;
+            float scaleRandomFactor = ((i * 71) % 17) / 16.0F;
+            float spawnAngle = i * 2.399F + time * 0.004F;
+            float centerOffsetDistance = 1.8F + horizontalRandomFactor * maxSpreadRadius;
+            double x = feet.x + Mth.cos(spawnAngle) * centerOffsetDistance;
+            double z = feet.z + Mth.sin(spawnAngle) * centerOffsetDistance;
+            BlockPos.MutableBlockPos groundPos = BlockPos.containing(x, feet.y + 2, z).mutable();
+            BlockState state = client.level.getBlockState(groundPos);
             for (int d = 0; d < 7 && (state.isAir() || !state.canOcclude()); d++) {
-                pos.move(0, -1, 0);
-                state = client.level.getBlockState(pos);
+                groundPos.move(0, -1, 0);
+                state = client.level.getBlockState(groundPos);
             }
             if (state.isAir() || !state.canOcclude()) {
                 continue;
             }
             // staggered
-            float rise = Mth.clamp((since - i * 0.6F) / 18.0F, 0.0F, 1.0F);
-            rise = rise * rise * (3.0F - 2.0F * rise);
-            float height = rise * (1.2F + f2 * 3.8F) + rise * 0.35F * Mth.sin(time * 0.09F + i * 1.3F);
-            height *= 1.0F - fall * fall;
-            if (height < 0.05F && fall > 0) {
+            // Performs a smoothstep interpolation on the debris as it lifts
+            float liftAnimationProgress = Mth.clamp((since - i * 0.6F) / 18.0F, 0.0F, 1.0F);
+            liftAnimationProgress = liftAnimationProgress * liftAnimationProgress * (3.0F - 2.0F * liftAnimationProgress);
+
+            // Combine lift with the vertical offset for the floating particles
+            float renderYOffset = liftAnimationProgress * (1.2F + verticalRandomFactor * 3.8F) + liftAnimationProgress * 0.35F * Mth.sin(time * 0.09F + i * 1.3F);
+            renderYOffset *= 1.0F - fall * fall;
+            if (renderYOffset < 0.05F && fall > 0) {
                 continue;
             }
-            float size = (0.3F + f3 * 0.45F) * Math.max(0.35F, rise);
+            float size = (0.3F + scaleRandomFactor * 0.45F) * Math.max(0.35F, liftAnimationProgress);
             poseStack.pushPose();
-            poseStack.translate(x - base.x, pos.getY() + 1.0 + height - base.y, z - base.z);
-            poseStack.mulPose(Axis.YP.rotation(time * 0.02F * (0.5F + f1) + i));
-            poseStack.mulPose(Axis.XP.rotation(time * 0.015F * (0.5F + f2) + i * 0.7F));
+            poseStack.translate(x - base.x, groundPos.getY() + 1.0 + renderYOffset - base.y, z - base.z);
+            poseStack.mulPose(Axis.YP.rotation(time * 0.02F * (0.5F + horizontalRandomFactor) + i));
+            poseStack.mulPose(Axis.XP.rotation(time * 0.015F * (0.5F + verticalRandomFactor) + i * 0.7F));
             poseStack.scale(size, size, size);
             poseStack.translate(-0.5, -0.5, -0.5);
             blocks.renderSingleBlock(state, poseStack, buffers, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
@@ -207,312 +212,608 @@ public class CruelSunRenderer extends EntityRenderer<CruelSunEntity> {
             if (since < i * 0.8F) {
                 break;
             }
-            float f1 = ((i * 41) % 29) / 28.0F;
-            float angle = i * 2.399F + 0.7F;
-            float dist = 1.5F + f1 * reach;
-            BlockPos.MutableBlockPos pos = BlockPos.containing(feet.x + Mth.cos(angle) * dist, feet.y + 3,
-                    feet.z + Mth.sin(angle) * dist).mutable();
-            BlockState state = client.level.getBlockState(pos);
-            for (int d = 0; d < 7 && state.isAir(); d++) {
-                pos.move(0, -1, 0);
-                state = client.level.getBlockState(pos);
+            float horizontalRandomFactor = ((i * 41) % 29) / 28.0F;
+            float spiralAngle = i * 2.399F + 0.7F;
+            float centerOffsetDistance = 1.5F + horizontalRandomFactor * reach;
+            BlockPos.MutableBlockPos groundPos = BlockPos.containing(feet.x + Mth.cos(spiralAngle) * centerOffsetDistance, feet.y + 3,
+                    feet.z + Mth.sin(spiralAngle) * centerOffsetDistance).mutable();
+            BlockState state = client.level.getBlockState(groundPos);
+            for (int step = 0; step < 7 && state.isAir(); step++) {
+                groundPos.move(0, -1, 0);
+                state = client.level.getBlockState(groundPos);
             }
-            if (state.isAir() || !state.isFlammable(client.level, pos, Direction.UP)) {
+            if (state.isAir() || !Services.PLATFORM.isFlammable(state, client.level, groundPos, Direction.UP)) {
                 continue;
             }
             // plants burn in place, leaves and wood on top
             if (!state.canBeReplaced()) {
-                pos.move(0, 1, 0);
-                if (!client.level.getBlockState(pos).isAir()) {
+                groundPos.move(0, 1, 0);
+                if (!client.level.getBlockState(groundPos).isAir()) {
                     continue;
                 }
             }
             poseStack.pushPose();
-            poseStack.translate(pos.getX() - base.x, pos.getY() - base.y, pos.getZ() - base.z);
+            poseStack.translate(groundPos.getX() - base.x, groundPos.getY() - base.y, groundPos.getZ() - base.z);
             blocks.renderSingleBlock(fire, poseStack, buffers, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
             poseStack.popPose();
         }
     }
 
     // fewer flames when it is far away
-    private static float detail(Vec3 camera, Vec3 at) {
-        double d = camera.distanceTo(at);
-        return d < 64 ? 1.0F : d < 160 ? 0.6F : 0.35F;
+    private static float detail(Vec3 cameraVec, Vec3 positionVec) {
+        double cameraDistance = cameraVec.distanceTo(positionVec);
+        return cameraDistance < 64 ? 1.0F : cameraDistance < 160 ? 0.6F : 0.35F;
     }
 
-    private static void sun(SunBatch b, Vec3 c, float r, float time, float sunLevel, float detail, float alpha) {
-        float pulse = 1.0F + 0.035F * Mth.sin(time * 0.5F) + 0.02F * Mth.sin(time * 1.7F);
-        float bright = 0.8F + 0.2F * sunLevel;
-        float body = r * pulse;
-        float turned = time * SPIN;
-        float slide = -turned / Mth.PI;
-        b.halo(c, r * 2.5F * pulse, FLAME, 0.5F * alpha);
-        b.glow(c, r * 4.2F * pulse, GOLD, 0.15F * alpha * bright);
-        rays(b, c, r * 0.9F, r * 3.6F, r * 0.12F, 10, time, GOLD, 0.3F * alpha * bright);
+    private static void sun(SunBatch sunBatch, Vec3 center, float baseRadius, float time, float sunLevel, float detail, float baseAlpha) {
+        float pulseMultiplier = 1.0F + 0.035F * Mth.sin(time * 0.5F) + 0.02F * Mth.sin(time * 1.7F);
+        float glowBrightness = 0.8F + 0.2F * sunLevel;
+        float currentSunRadius = baseRadius * pulseMultiplier;
 
-        b.ball(true, SunRenderTypes.PLASMA_A, c, body, TILT, slide, BODY, LIMB, alpha, alpha);
-        b.ball(false, SunRenderTypes.PLASMA_A, c, body * 1.005F, TILT, slide, ORANGE, FLAME, 0.45F * alpha, 0.6F * alpha);
-        b.ball(false, SunRenderTypes.PLASMA_B, c, body * 1.02F, -TILT * 1.7F, -slide * 0.6F, GOLD, GOLD, 0.3F * alpha, 0.2F * alpha);
+        float rotationAngle = time * SPIN;
+        float slide = -rotationAngle / Mth.PI;
+
+        // It is easier to make changes with declared variables than it is to hunt them down in your methods. Even when
+        // the method is only one line, it is good practice that, once it becomes habit, can make your life a lot easier.
+        // Remember: the compiler doesn't care how you organize your variables. It is going to plug them in where they
+        // belong anyway. This is mostly when you have an extremely long method. Having all of the variables close at
+        // hand makes it easier to make changes, debug and read the code more easily.
+
+        // It is also worth noting that by declaring your variables like this, it will help you notice where you have
+        // duplicate code. Now, granted, leaving everything inline can help the IDE recognize duplicate code, and it can
+        // make suggestions; but, it is also just as easy for it to miss something because the individual values are
+        // different. This is why it is essential to audit your own code.
+
+        float sunHaloRadius = baseRadius * 2.5F * pulseMultiplier;
+        float sunHaloAlpha = 0.5F * baseAlpha;
+        float sunGlowRadius = baseRadius * 4.2F * pulseMultiplier;
+        float sunGlowAlpha = 0.15F * baseAlpha * glowBrightness;
+
+        sunBatch.drawHalo(center, sunHaloRadius, FLAME, sunHaloAlpha);
+        sunBatch.drawGlow(center, sunGlowRadius, GOLD, sunGlowAlpha);
+
+        float rayInnerRadius = baseRadius * 0.9F;
+        float rayOuterRadius = baseRadius * 3.6F;
+        float rayThickness = baseRadius * 0.12F;
+        int rayCount = 10;
+        float rayAlpha = 0.3F * baseAlpha * glowBrightness;
+        renderGodRays(sunBatch, center, rayInnerRadius, rayOuterRadius, rayThickness, rayCount, time, GOLD, rayAlpha);
+
+        // Plasma A Variables
+        float bodyRadiusA = currentSunRadius * 1.005F;
+        float coreAlphaA = 0.45F * baseAlpha;
+        float rimAlphaA = 0.6F * baseAlpha;
+
+        // Plasma B Variables
+        float coreAlphaB = 0.3F * baseAlpha;
+        float bodyRadiusB = currentSunRadius * 1.02F;
+        float tiltB = -TILT * 1.7F;
+        float slideB = -slide * 0.6F;
+        float rimAlphaB = 0.2F * baseAlpha;
+
+        // Haze Variables
+        float hazeRadius = currentSunRadius * 1.08F;
+        float hazeRimAlpha = 0.7F * baseAlpha;
+
+        // Glow Variables
+        float glowRadius = currentSunRadius * 0.9F;
+        float glowAlpha = 0.25F * baseAlpha;
+
+        sunBatch.drawBall(true,  SunRenderTypes.PLASMA_A, center, currentSunRadius, TILT, slide, BODY, LIMB, baseAlpha, baseAlpha);
+        sunBatch.drawBall(false, SunRenderTypes.PLASMA_A, center, bodyRadiusA, TILT, slide, ORANGE, FLAME, coreAlphaA, rimAlphaA);
+        sunBatch.drawBall(false, SunRenderTypes.PLASMA_B, center, bodyRadiusB, tiltB, slideB, GOLD, GOLD, coreAlphaB, rimAlphaB);
         // haze on the limb
-        b.ball(true, AddonRenderTypes.WHITE, c, body * 1.08F, 0.0F, 0.0F, ORANGE, FLAME, 0.0F, 0.7F * alpha);
+        sunBatch.drawBall(true, SimplyAnimeRenderTypes.WHITE, center, hazeRadius, 0.0F, 0.0F, ORANGE, FLAME, 0.0F, hazeRimAlpha);
         // core
-        b.glow(c, r * 0.9F, WHITE, 0.25F * alpha);
+        sunBatch.drawGlow(center, glowRadius, WHITE, glowAlpha);
 
-        float edge = r * CruelSunEntity.HEAT_EDGE;
-        int flames = Math.max(40, (int) (110 * detail));
-        for (int i = 0; i < flames; i++) {
-            Vec3 n = spot(i, flames, turned, TILT);
-            float facing = b.facing(c, n, body);
-            if (facing < -0.35F || facing > 0.6F) {
+        float heatEdgeRadius = baseRadius * CruelSunEntity.HEAT_EDGE;
+        int maxFlameCount = Math.max(40, (int) (110 * detail));
+        for (int flameCount = 0; flameCount < maxFlameCount; flameCount++) {
+            Vec3 normalDirection = calculateSphereSurfacePoint(flameCount, maxFlameCount, rotationAngle, TILT);
+            float cameraFacingFactor = sunBatch.facing(center, normalDirection, currentSunRadius);
+            float cameraFacingMin = -0.35F;
+            float cameraFacingMax = 0.6F;
+
+            if (cameraFacingFactor < cameraFacingMin || cameraFacingFactor > cameraFacingMax) {
                 continue;
             }
-            float f1 = ((i * 37) % 23) / 22.0F;
-            float f2 = ((i * 53) % 19) / 18.0F;
-            float flick = 0.5F + 0.5F * Mth.sin(time * (0.25F + 0.2F * f1) + i * 2.39F);
-            float reach = i % 3 == 0 ? 0.45F + 0.5F * flick * (0.6F + 0.4F * f1) : 0.2F + 0.35F * flick * (0.5F + f2);
-            float from = body * 0.88F;
-            float len = Math.min(body * reach, edge - from);
-            float wide = body * (0.2F + 0.14F * f2);
-            float show = alpha * Mth.clamp(1.0F - facing, 0.0F, 1.0F);
-            b.tongue(c, n, from, len, wide, i, FLAME, 0.9F * show);
-            b.tongue(c, n, from, len * 0.6F, wide * 0.6F, i + 1, GOLD, 0.8F * show);
+
+            float horizontalRandomFactor = ((flameCount * 37) % 23) / 22.0F;
+            float verticalRandomFactor = ((flameCount * 53) % 19) / 18.0F;
+
+            float flickerIntensity = 0.5F + 0.5F * Mth.sin(time * (0.25F + 0.2F * horizontalRandomFactor) + flameCount * 2.39F);
+            float reachPercentage = flameCount % 3 == 0
+                    ? 0.45F + 0.5F * flickerIntensity * (0.6F + 0.4F * horizontalRandomFactor)
+                    : 0.2F + 0.35F * flickerIntensity * (0.5F + verticalRandomFactor);
+
+            float edgeVisibilityAlpha = baseAlpha * Mth.clamp(1.0F - cameraFacingFactor, 0.0F, 1.0F);
+
+            float tongueStartRadius = currentSunRadius * 0.88F;
+            float flameTongueLength = Math.min(currentSunRadius * reachPercentage, heatEdgeRadius - tongueStartRadius);
+            float flameTongueWidth = currentSunRadius * (0.2F + 0.14F * verticalRandomFactor);
+            float flameTongueAlpha = 0.9F * edgeVisibilityAlpha;
+
+            sunBatch.drawTongue(center, normalDirection, tongueStartRadius, flameTongueLength, flameTongueWidth, flameCount, FLAME, flameTongueAlpha);
+
+            float goldTongueLength = flameTongueLength * 0.6F;
+            float goldTongueWidth = flameTongueWidth * 0.6F;
+            int goldTongueCount = flameCount + 1;
+            float goldTongueAlpha = 0.8F * edgeVisibilityAlpha;
+
+            sunBatch.drawTongue(center, normalDirection, tongueStartRadius, goldTongueLength, goldTongueWidth, goldTongueCount, GOLD, goldTongueAlpha);
         }
 
         // loops
-        int loops = detail > 0.5F ? 8 : 4;
-        for (int k = 0; k < loops; k++) {
-            Vec3 n = spot(k * 7 + 3, 61, turned, TILT);
-            if (b.facing(c, n, body) < -0.3F) {
+        int maxLoopCount = detail > 0.5F ? 8 : 4;
+        for (int k = 0; k < maxLoopCount; k++) {
+            Vec3 normalDirection = calculateSphereSurfacePoint(k * 7 + 3, 61, rotationAngle, TILT);
+            if (sunBatch.facing(center, normalDirection, currentSunRadius) < -0.3F) {
                 continue;
             }
-            float f1 = ((k * 37) % 23) / 22.0F;
-            float life = Mth.sin(Mth.PI * Mth.frac(time / 110.0F + k * 0.37F));
-            Vec3 across = n.cross(new Vec3(0.3, 1.0, 0.2 + k)).normalize();
-            float span = 0.55F + 0.25F * f1;
-            float height = (0.18F + 0.3F * f1) * life;
-            Vec3[] path = new Vec3[11];
-            for (int j = 0; j < path.length; j++) {
-                float t = j / (float) (path.length - 1);
-                float ang = (t - 0.5F) * span;
-                Vec3 dir = n.scale(Mth.cos(ang)).add(across.scale(Mth.sin(ang)));
-                path[j] = c.add(dir.scale(body * (0.97F + height * Mth.sin(Mth.PI * t))));
+
+            float horizontalRandomFactor = ((k * 37) % 23) / 22.0F;
+            float loopLifecycle = Mth.sin(Mth.PI * Mth.frac(time / 110.0F + k * 0.37F));
+
+            Vec3 tangentAcross = normalDirection.cross(new Vec3(0.3, 1.0, 0.2 + k)).normalize();
+            float loopArcSpan = 0.55F + 0.25F * horizontalRandomFactor;
+            float loopMaxHeight = (0.18F + 0.3F * horizontalRandomFactor) * loopLifecycle;
+
+            Vec3[] ribbonPath = new Vec3[11];
+            for (int j = 0; j < ribbonPath.length; j++) {
+                float pathProgress = j / (float) (ribbonPath.length - 1);
+                float currentArcAngle = (pathProgress - 0.5F) * loopArcSpan;
+                Vec3 arcDirection = normalDirection.scale(Mth.cos(currentArcAngle)).add(tangentAcross.scale(Mth.sin(currentArcAngle)));
+                float ribbonScaleFactor = currentSunRadius * (0.97F + loopMaxHeight * Mth.sin(Mth.PI * pathProgress));
+                ribbonPath[j] = center.add(arcDirection.scale(ribbonScaleFactor));
             }
-            b.ribbon(SunRenderTypes.RAY, path, body * 0.09F, body * 0.09F, FLAME, 0.8F * life * alpha, 0.8F * life * alpha, 0.0F);
-            b.ribbon(SunRenderTypes.RAY, path, body * 0.035F, body * 0.035F, GOLD, 0.7F * life * alpha, 0.7F * life * alpha, 0.0F);
+
+            float ribbonWidth0 = currentSunRadius * 0.09F;
+            float ribbonAlpha0 = 0.8F * loopLifecycle * baseAlpha;
+
+            float ribbonWidth1 = currentSunRadius * 0.035F;
+            float ribbonAlpha1 = 0.7F * loopLifecycle * baseAlpha;
+
+            sunBatch.drawRibbon(SunRenderTypes.RAY, ribbonPath, ribbonWidth0, ribbonWidth0, FLAME, ribbonAlpha0, ribbonAlpha0, 0.0F);
+            sunBatch.drawRibbon(SunRenderTypes.RAY, ribbonPath, ribbonWidth1, ribbonWidth1, GOLD,  ribbonAlpha1, ribbonAlpha1, 0.0F);
         }
 
         // flares
-        for (int j = 0; j < 3; j++) {
-            float clock = time / 70.0F + j * 0.41F;
-            float cycle = Mth.frac(clock);
-            float fade = 1.0F - Mth.clamp((cycle - 0.12F) / 0.5F, 0.0F, 1.0F);
-            if (fade <= 0.0F) {
+        for (int flareCount = 0; flareCount < 3; flareCount++) {
+            float flareInternalClock = time / 70.0F + flareCount * 0.41F;
+            float flareLifecycle = Mth.frac(flareInternalClock);
+
+            float flareFadeAlpha = 1.0F - Mth.clamp((flareLifecycle - 0.12F) / 0.5F, 0.0F, 1.0F);
+            if (flareFadeAlpha <= 0.0F) {
                 continue;
             }
-            int burst = Mth.floor(clock);
-            Vec3 n = spot(Math.floorMod(burst * 13 + j * 7, 97), 97, turned, TILT);
-            float facing = b.facing(c, n, body);
-            if (facing < -0.3F || facing > 0.75F) {
+
+            int flareBurst = Mth.floor(flareInternalClock);
+            int flarePointCount = 97;
+            int flareBurstIndex = Math.floorMod(flareBurst * 13 + flareCount * 7, flarePointCount);
+            Vec3 normalDirection = calculateSphereSurfacePoint(flareBurstIndex, flarePointCount, rotationAngle, TILT);
+
+            float cameraFacingFactor = sunBatch.facing(center, normalDirection, currentSunRadius);
+            float cameraFacingMin = -0.3F;
+            float cameraFacingMax = 0.75F;
+            if (cameraFacingFactor < cameraFacingMin || cameraFacingFactor > cameraFacingMax) {
                 continue;
             }
-            float grow = Math.min(1.0F, cycle / 0.12F);
-            float from = body * 0.9F;
-            float len = Math.min(body * 1.05F * grow, edge - from);
-            b.tongue(c, n, from, len, body * 0.3F, burst + j, ORANGE, fade * alpha);
-            b.tongue(c, n, from, len * 0.7F, body * 0.18F, burst + j + 2, PALE, 0.8F * fade * alpha);
+
+            float burstGrowthScale = Math.min(1.0F, flareLifecycle / 0.12F);
+
+            float flareStartRadius = currentSunRadius * 0.9F;
+            float flareLength = Math.min(currentSunRadius * 1.05F * burstGrowthScale, heatEdgeRadius - flareStartRadius);
+            float flareWidth = currentSunRadius * 0.3F;
+            int flareCountVariant = flareBurst + flareCount;
+            float flareAlpha = flareFadeAlpha * baseAlpha;
+
+            float flareLength1 = flareLength * 0.7F;
+            float flareWidth1 = currentSunRadius * 0.18F;
+            int flareCountVariant1 = flareCountVariant + 2;
+            float flareAlpha1 = flareAlpha * 0.8F;
+
+            sunBatch.drawTongue(center, normalDirection, flareStartRadius, flareLength,  flareWidth,  flareCountVariant,  ORANGE, flareAlpha);
+            sunBatch.drawTongue(center, normalDirection, flareStartRadius, flareLength1, flareWidth1, flareCountVariant1, PALE,   flareAlpha1);
         }
     }
 
-    private static Vec3 spot(int i, int count, float turned, float tilt) {
-        float y = 1.0F - 2.0F * (i + 0.5F) / count;
-        float ring = Mth.sqrt(Math.max(0.0F, 1.0F - y * y));
-        float a = i * 2.39996F + turned;
-        float x = ring * Mth.cos(a);
-        float z = ring * Mth.sin(a);
-        float ct = Mth.cos(tilt);
-        float st = Mth.sin(tilt);
-        return new Vec3(x, y * ct - z * st, y * st + z * ct);
+    private static Vec3 calculateSphereSurfacePoint(int index, int count, float rotationAngle, float tilt) {
+        float verticalPosition = 1.0F - 2.0F * (index + 0.5F) / count;
+        float horizontalRingRadius = Mth.sqrt(Math.max(0.0F, 1.0F - verticalPosition * verticalPosition));
+        float spiralAngle = index * 2.39996F + rotationAngle;
+
+        float untiltedX = horizontalRingRadius * Mth.cos(spiralAngle);
+        float untiltedZ = horizontalRingRadius * Mth.sin(spiralAngle);
+
+        float cosTilt = Mth.cos(tilt);
+        float sinTilt = Mth.sin(tilt);
+
+        float tiltedY = verticalPosition * cosTilt - untiltedZ * sinTilt;
+        float tiltedZ = verticalPosition * sinTilt + untiltedZ * cosTilt;
+
+        return new Vec3(untiltedX, tiltedY, tiltedZ);
     }
 
-    private static void birth(SunBatch b, Vec3 feet, Vec3 center, float full, float time, float ticks) {
-        float in = Math.min(1.0F, ticks / 6.0F);
-        float out = 1.0F - Mth.clamp((ticks - CruelSunEntity.IGNITE_TICKS - 6.0F) / 24.0F, 0.0F, 1.0F);
-        float alpha = in * out;
-        if (alpha <= 0.01F) {
+    private static void renderSunSpawningSequence(SunBatch sunBatch, Vec3 ownerFeetVec, Vec3 sunCenterVec, float baseRadius, float time, float ticks) {
+
+        float fadeInAlpha = Math.min(1.0F, ticks / 6.0F);
+        float fadeOutAlpha = 1.0F - Mth.clamp((ticks - CruelSunEntity.IGNITE_TICKS - 6.0F) / 24.0F, 0.0F, 1.0F);
+        float structuralAlpha = fadeInAlpha * fadeOutAlpha;
+
+        if (structuralAlpha <= 0.01F) {
             return;
         }
-        float gather = Math.min(1.0F, ticks / CruelSunEntity.IGNITE_TICKS);
-        float wide = Math.max(4.0F, full * 1.2F);
-        Vec3 ground = new Vec3(center.x, feet.y + 0.08, center.z);
+
+        float ignitionProgress = Math.min(1.0F, ticks / CruelSunEntity.IGNITE_TICKS);
+        float effectRadius = Math.max(4.0F, baseRadius * 1.2F);
+
+        Vec3 groundVec = new Vec3(sunCenterVec.x, ownerFeetVec.y + 0.08, sunCenterVec.z);
 
         // ground rings
-        b.flatGlow(ground, wide * 1.2F, GOLD, 0.55F * alpha);
-        b.flatGlow(ground, wide * 0.5F, WHITE, 0.5F * alpha * gather);
-        for (int k = 0; k < 4; k++) {
-            float cycle = Mth.frac(time * (0.05F + 0.04F * gather) + k * 0.25F);
-            b.flatRing(ground.add(0, 0.02 * k, 0), wide * (1.0F - cycle * cycle), k % 2 == 0 ? ORANGE : GOLD,
-                    0.9F * alpha * Mth.sin(Mth.PI * cycle));
+        float glowGoldRadius = effectRadius * 1.2F;
+        float glowGoldAlpha = 0.55F * structuralAlpha;
+        sunBatch.drawFlatGlow(groundVec, glowGoldRadius, GOLD, glowGoldAlpha);
+
+        float glowWhiteRadius = effectRadius * 0.5F;
+        float glowWhiteAlpha = 0.5F * structuralAlpha * ignitionProgress;
+        sunBatch.drawFlatGlow(groundVec, glowWhiteRadius, WHITE, glowWhiteAlpha);
+
+        for (int rings = 0; rings < 4; rings++) {
+            float ringCycleProgress = Mth.frac(time * (0.05F + 0.04F * ignitionProgress) + rings * 0.25F);
+            Vec3 staggeredGroundVec = groundVec.add(0, 0.02 * rings, 0);
+
+            float collapseRadius = effectRadius * (1.0F - ringCycleProgress * ringCycleProgress);
+            int[] ringColor = rings % 2 == 0 ? ORANGE : GOLD;
+            float ringAlpha = 0.9F * structuralAlpha * Mth.sin(Mth.PI * ringCycleProgress);
+
+            sunBatch.drawFlatRing(staggeredGroundVec, collapseRadius, ringColor, ringAlpha);
         }
 
-        // sky shaft + ground column
-        Vec3[] shaft = {center, center.add(0, full * 4.5F, 0)};
-        b.ribbon(SunRenderTypes.RAY, shaft, full * (0.25F + 0.45F * gather), full * 0.9F, GOLD, 0.8F * alpha, 0.0F, 0.0F);
-        b.ribbon(SunRenderTypes.RAY, shaft, full * (0.08F + 0.16F * gather), full * 0.25F, WHITE, 0.9F * alpha, 0.0F, 0.0F);
-        Vec3[] column = {ground, center};
-        b.ribbon(SunRenderTypes.RAY, column, full * 0.3F, full * 0.15F, GOLD, 0.5F * alpha, 0.8F * alpha, 0.0F);
-        b.ribbon(SunRenderTypes.RAY, column, full * 0.1F, full * 0.06F, WHITE, 0.7F * alpha, 0.9F * alpha, 0.0F);
+        // sky shaft
+        Vec3[] skyShaftPath = {sunCenterVec, sunCenterVec.add(0, baseRadius * 4.5F, 0)};
+
+        float skyShaftGoldStartHalfWidth = baseRadius * (0.25F + 0.45F * ignitionProgress);
+        float skyShaftGoldEndHalfWidth = baseRadius * 0.9F;
+        float skyShaftGoldStartAlpha = structuralAlpha * 0.8F;
+        sunBatch.drawRibbon(SunRenderTypes.RAY, skyShaftPath, skyShaftGoldStartHalfWidth, skyShaftGoldEndHalfWidth, GOLD, skyShaftGoldStartAlpha, 0.0F, 0.0F);
+
+        float skyShaftWhiteStartHalfWidth = baseRadius * (0.08F + 0.16F * ignitionProgress);
+        float skyShaftWhiteEndHalfWidth = baseRadius * 0.25F;
+        float skyShaftWhiteStartAlpha = structuralAlpha * 0.9F;
+        sunBatch.drawRibbon(SunRenderTypes.RAY, skyShaftPath, skyShaftWhiteStartHalfWidth, skyShaftWhiteEndHalfWidth, WHITE, skyShaftWhiteStartAlpha, 0.0F, 0.0F);
+
+        // ground column
+        Vec3[] columnPath = {groundVec, sunCenterVec};
+
+        float columnGoldStartHalfWidth = baseRadius * 0.3F;
+        float columnGoldEndHalfWidth = baseRadius * 0.15F;
+        float columnGoldStartAlpha = structuralAlpha * 0.5F;
+        float columnGoldEndAlpha = structuralAlpha * 0.8F;
+        sunBatch.drawRibbon(SunRenderTypes.RAY, columnPath, columnGoldStartHalfWidth, columnGoldEndHalfWidth, GOLD, columnGoldStartAlpha, columnGoldEndAlpha, 0.0F);
+
+        float columnWhiteStartHalfWidth = baseRadius * 0.1F;
+        float columnWhiteEndHalfWidth = baseRadius * 0.06F;
+        float columnWhiteStartAlpha = structuralAlpha * 0.7F;
+        float columnWhiteEndAlpha = structuralAlpha * 0.9F;
+        sunBatch.drawRibbon(SunRenderTypes.RAY, columnPath, columnWhiteStartHalfWidth, columnWhiteEndHalfWidth, WHITE, columnWhiteStartAlpha, columnWhiteEndAlpha, 0.0F);
 
         // streams
-        for (int k = 0; k < 6; k++) {
-            Vec3[] path = new Vec3[26];
-            for (int j = 0; j < path.length; j++) {
-                float t = j / (float) (path.length - 1);
-                float a = k * Mth.TWO_PI / 6.0F + t * 6.5F - time * 0.3F;
-                float r = wide * (1.0F - t);
-                double y = Mth.lerp(t, ground.y, center.y) + Mth.sin(Mth.PI * t) * full * 1.2F;
-                path[j] = new Vec3(center.x + Mth.cos(a) * r, y, center.z + Mth.sin(a) * r);
+        int maxStreamCount = 6;
+        for (int streamCount = 0; streamCount < maxStreamCount; streamCount++) {
+            Vec3[] streamSplinePath = new Vec3[26];
+
+            for (int streamSplinePathPoint = 0; streamSplinePathPoint < streamSplinePath.length; streamSplinePathPoint++) {
+                float pathInterpolationProgress = streamSplinePathPoint / (float) (streamSplinePath.length - 1);
+
+                float spiralAngle = streamCount * Mth.TWO_PI / 6.0F + pathInterpolationProgress * 6.5F - time * 0.3F;
+                float spiralRadius = effectRadius * (1.0F - pathInterpolationProgress);
+
+                double linearHeight = Mth.lerp(pathInterpolationProgress, groundVec.y, sunCenterVec.y);
+                double archOffset = Mth.sin(Mth.PI * pathInterpolationProgress) * baseRadius * 1.2F;
+                double currentY = linearHeight + archOffset;
+
+                streamSplinePath[streamSplinePathPoint] = new Vec3(sunCenterVec.x + Mth.cos(spiralAngle) * spiralRadius, currentY, sunCenterVec.z + Mth.sin(spiralAngle) * spiralRadius);
             }
-            float thick = full * 0.22F;
-            b.ribbon(SunRenderTypes.RAY, path, thick, thick * 0.3F, FLAME, 0.7F * alpha, alpha, 0.0F);
-            b.ribbon(SunRenderTypes.RAY, path, thick * 0.5F, thick * 0.15F, GOLD, 0.8F * alpha, alpha, 0.0F);
-            b.ribbon(SunRenderTypes.RAY, path, thick * 0.18F, thick * 0.06F, WHITE, 0.6F * alpha, alpha, 0.0F);
+
+            float baseRibbonThickness = baseRadius * 0.22F;
+
+            float ribbonFlameEndHalfWidth = baseRibbonThickness * 0.3F;
+            float ribbonFlameStartAlpha = structuralAlpha * 0.7F;
+            sunBatch.drawRibbon(SunRenderTypes.RAY, streamSplinePath, baseRibbonThickness, ribbonFlameEndHalfWidth, FLAME, ribbonFlameStartAlpha, structuralAlpha, 0.0F);
+
+            float ribbonGoldStartHalfWidth = baseRibbonThickness * 0.5F;
+            float ribbonGoldEndHalfWidth = baseRibbonThickness * 0.15F;
+            float ribbonGoldStartAlpha = structuralAlpha * 0.8F;
+            sunBatch.drawRibbon(SunRenderTypes.RAY, streamSplinePath, ribbonGoldStartHalfWidth, ribbonGoldEndHalfWidth, GOLD, ribbonGoldStartAlpha, structuralAlpha, 0.0F);
+
+            float ribbonWhiteStartHalfWidth = baseRibbonThickness * 0.18F;
+            float ribbonWhiteEndHalfWidth = baseRibbonThickness * 0.06F;
+            float ribbonWhiteStartAlpha = structuralAlpha * 0.6F;
+            sunBatch.drawRibbon(SunRenderTypes.RAY, streamSplinePath, ribbonWhiteStartHalfWidth, ribbonWhiteEndHalfWidth, WHITE, ribbonWhiteStartAlpha, structuralAlpha, 0.0F);
         }
     }
 
     // ignition flash
-    private static void ignition(SunBatch b, Vec3 feet, Vec3 center, float full, float since) {
-        if (since >= 16.0F) {
+    private static void ignition(SunBatch sunBatch, Vec3 ignitedEntityFeetVec, Vec3 ignitionCenterVec, float baseRadius, float ticks) {
+        if (ticks >= 16.0F) {
             return;
         }
-        float k = since / 16.0F;
-        float gone = (1.0F - k) * (1.0F - k);
-        b.halo(center, full * (2.5F + 4.0F * k), FLAME, 0.5F * gone);
-        b.halo(center, full * (1.6F + 3.0F * k), GOLD, 0.8F * gone);
-        b.glow(center, full * (1.2F + 2.0F * k), WHITE, gone);
-        Vec3 ground = new Vec3(center.x, feet.y + 0.1, center.z);
-        Vec3[] shaft = {ground, center.add(0, full * 5.0F, 0)};
-        b.ribbon(SunRenderTypes.RAY, shaft, full * 0.7F * (1.0F - k), full * 0.4F * (1.0F - k), WHITE, gone, 0.0F, 0.0F);
+        float ignitionProgress = ticks / 16.0F;
+
+        float visibilityFadeFactor = (1.0F - ignitionProgress) * (1.0F - ignitionProgress);
+
+        float haloFlameRadius = baseRadius * (2.5F + 4.0F * ignitionProgress);
+        float haloFlameAlpha = visibilityFadeFactor * 0.5F;
+        sunBatch.drawHalo(ignitionCenterVec, haloFlameRadius, FLAME, haloFlameAlpha);
+
+        float haloGoldRadius = baseRadius * (1.6F + 3.0F * ignitionProgress);
+        float haloGoldAlpha = visibilityFadeFactor * 0.8F;
+        sunBatch.drawHalo(ignitionCenterVec, haloGoldRadius, GOLD, haloGoldAlpha);
+
+        float glowWhiteRadius = baseRadius * (1.2F + 2.0F * ignitionProgress);
+        sunBatch.drawGlow(ignitionCenterVec, glowWhiteRadius, WHITE, visibilityFadeFactor);
+
+        Vec3 groundVec = new Vec3(ignitionCenterVec.x, ignitedEntityFeetVec.y + 0.1, ignitionCenterVec.z);
+        float verticalShaftOffsetY = baseRadius * 5.0F;
+        Vec3[] verticalShaftPath = {groundVec, ignitionCenterVec.add(0, verticalShaftOffsetY, 0)};
+
+        float ribbonWhiteStartHalfWidth = baseRadius * 0.7F * (1.0F - ignitionProgress);
+        float ribbonWhiteEndHalfWidth = baseRadius * 0.4F * (1.0F - ignitionProgress);
+        sunBatch.drawRibbon(SunRenderTypes.RAY, verticalShaftPath, ribbonWhiteStartHalfWidth, ribbonWhiteEndHalfWidth, WHITE, visibilityFadeFactor, 0.0F, 0.0F);
+
         // shell
-        b.ball(true, AddonRenderTypes.WHITE, center, full * (0.3F + 2.6F * k), 0.0F, 0.0F, GOLD, GOLD, 0.0F, 0.8F * gone);
-        b.flatRing(ground, full * (0.5F + 4.0F * k), PALE, gone);
-        b.flatRing(ground.add(0, 0.03, 0), full * (0.3F + 3.0F * k), ORANGE, 0.8F * gone);
+        float shellGoldRadius = baseRadius * (0.3F + 2.6F * ignitionProgress);
+        float shellGoldRimAlpha = visibilityFadeFactor * 0.8F;
+        sunBatch.drawBall(true, SimplyAnimeRenderTypes.WHITE, ignitionCenterVec, shellGoldRadius, 0.0F, 0.0F, GOLD, GOLD, 0.0F, shellGoldRimAlpha);
+
+        float flatRingPaleRadius = baseRadius * (0.5F + 4.0F * ignitionProgress);
+        sunBatch.drawFlatRing(groundVec, flatRingPaleRadius, PALE, visibilityFadeFactor);
+
+        Vec3 flatRingOrangeGroundVecOffset = groundVec.add(0, 0.03, 0);
+        float flatRingOrangeRadius = baseRadius * (0.3F + 3.0F * ignitionProgress);
+        float flatRingOrangeAlpha = visibilityFadeFactor * 0.8F;
+        sunBatch.drawFlatRing(flatRingOrangeGroundVecOffset, flatRingOrangeRadius, ORANGE, flatRingOrangeAlpha);
     }
 
     // god rays
-    private static void rays(SunBatch b, Vec3 c, float start, float reach, float width, int count, float time, int[] color, float alpha) {
-        for (int i = 0; i < count; i++) {
-            float a = i * Mth.TWO_PI / count + time * 0.004F + (i % 3) * 0.13F;
-            float len = reach * (0.55F + 0.45F * (0.5F + 0.5F * Mth.sin(time * 0.21F + i * 3.1F)));
-            float fade = 0.6F + 0.4F * Mth.sin(time * 0.33F + i * 1.3F);
-            b.ray(c, a, start, Math.max(start + 0.1F, len), width, color, alpha * fade);
+    private static void renderGodRays(SunBatch sunBatch, Vec3 sunCenterVec, float innerRadius, float maxReachDistance,
+                                      float rayHalfWidth, int rayCount, float time, int[] rayColor, float baseAlpha) {
+        for (int rays = 0; rays < rayCount; rays++) {
+            // Distributes rays evenly, same as original
+            float rayAngle = rays * Mth.TWO_PI / rayCount + time * 0.004F + (rays % 3) * 0.13F;
+
+            // Calculates a sine wave scaling factor to pulse the ray's length over time
+            float lengthPulsingFactor = 0.5F + 0.5F * Mth.sin(time * 0.21F + rays * 3.1F);
+            float currentRayLength = maxReachDistance * (0.55F + 0.45F * lengthPulsingFactor);
+
+            // Prevents the rays from inverting
+            float clampedReachDistance = Math.max(innerRadius + 0.1F, currentRayLength);
+
+            // Calculates secondary sine wave to offset the individual ray alphas over time. This gives a shimmering effect
+            float shimmerFadeFactor = 0.6F + 0.4F * Mth.sin(time * 0.33F + rays * 1.3F);
+            float dynamicRayAlpha = baseAlpha * shimmerFadeFactor;
+
+            sunBatch.drawRay(sunCenterVec, rayAngle, innerRadius, clampedReachDistance, rayHalfWidth, rayColor, dynamicRayAlpha);
         }
     }
 
     // ground light
-    private static void ground(SunBatch b, Vec3 feet, float orb, float since, float sunLevel) {
-        Vec3 at = feet.add(0, 0.05, 0);
-        float grow = Math.min(1.0F, since / 20.0F);
-        b.flatGlow(at, orb * 2.2F * grow, GOLD, 0.35F + 0.1F * sunLevel);
-        for (int k = 0; k < 3; k++) {
-            float cycle = ((since + k * 13.0F) % 40.0F) / 40.0F;
-            b.flatRing(at.add(0, 0.02 * k, 0), orb * (0.4F + 1.8F * cycle) * grow, ORANGE, 0.75F * (1.0F - cycle));
+    private static void renderGroundRings(SunBatch sunBatch, Vec3 ownerFeetVec, float sunOrbBaseRadius, float timeSinceSpawn, float sunLevel) {
+        Vec3 groundAnchorVec = ownerFeetVec.add(0, 0.05, 0);
+        float spawnGrowthProgress = Math.min(1.0F, timeSinceSpawn / 20.0F);
+
+        float flatGlowGoldRadius = sunOrbBaseRadius * 2.2F * spawnGrowthProgress;
+        float flatGlowGoldAlpha = 0.35F + 0.1F * sunLevel;
+        sunBatch.drawFlatGlow(groundAnchorVec, flatGlowGoldRadius, GOLD, flatGlowGoldAlpha);
+
+        int maxRingCount = 3;
+        for (int rings = 0; rings < maxRingCount; rings++) {
+            float ringCycleProgress = ((timeSinceSpawn + rings * 13.0F) % 40.0F) / 40.0F;
+            Vec3 layeredGroundPos = groundAnchorVec.add(0.0, 0.02 * rings, 0.0);
+            float expandedRingRadius = sunOrbBaseRadius * (0.4F + 1.8F * ringCycleProgress) * spawnGrowthProgress;
+            float ringAlpha = 0.75F * (1.0F - ringCycleProgress);
+            sunBatch.drawFlatRing(layeredGroundPos, expandedRingRadius, ORANGE, ringAlpha);
         }
     }
 
     // trail, same taper as CruelSunEntity.TRAIL_*
-    private static void trail(SunBatch b, Vec3 dir, float r, float time, Vec3 fromCamera) {
-        if (dir.lengthSqr() < 1.0E-4) {
+    private static void renderTrail(SunBatch sunBatch, Vec3 directionVec, float baseRadius, float time, Vec3 cameraToEntityVec) {
+        if (directionVec.lengthSqr() < 1.0E-4) {
             return;
         }
-        dir = dir.normalize();
-        Vec3 w = dir.cross(fromCamera);
-        w = w.lengthSqr() < 1.0E-6 ? b.right : w.normalize();
-        Vec3 back = dir.scale(-r * CruelSunEntity.TRAIL_LENGTH);
-        float wide = r * CruelSunEntity.TRAIL_WIDTH;
-        float tip = r * CruelSunEntity.TRAIL_TIP;
-        float scroll = time * 0.08F;
-        b.streak(SunRenderTypes.FLAMES, Vec3.ZERO, back, w, wide, tip, ORANGE, 0.95F, scroll);
-        b.streak(SunRenderTypes.FLAMES, Vec3.ZERO, back.scale(0.75), w, wide * 0.6F, tip, GOLD, 0.9F, scroll + 0.37F);
-        b.streak(SunRenderTypes.RAY, Vec3.ZERO, back.scale(0.9), w, wide * 0.35F, tip * 0.5F, WHITE, 0.8F, 0.0F);
+        directionVec = directionVec.normalize();
+
+        Vec3 perpendicularTrailWidthVec = directionVec.cross(cameraToEntityVec);
+        perpendicularTrailWidthVec = perpendicularTrailWidthVec.lengthSqr() < 1.0E-6
+                ? sunBatch.right
+                : perpendicularTrailWidthVec.normalize();
+
+        Vec3 backwardTrailOffsetVec = directionVec.scale(-baseRadius * CruelSunEntity.TRAIL_LENGTH);
+        float trailMaxWidth = baseRadius * CruelSunEntity.TRAIL_WIDTH;
+        float trailTipScalingFactor = baseRadius * CruelSunEntity.TRAIL_TIP;
+
+        float textureScrollOffset = time * 0.08F;
+
+        sunBatch.drawStreak(SunRenderTypes.FLAMES, Vec3.ZERO, backwardTrailOffsetVec, perpendicularTrailWidthVec, trailMaxWidth, trailTipScalingFactor, ORANGE, 0.95F, textureScrollOffset);
+
+        Vec3 streakGoldOffsetVec = backwardTrailOffsetVec.scale(0.75);
+        float streakGoldWidth = trailMaxWidth * 0.6F;
+        float textureScrollStreakGoldOffset = textureScrollOffset + 0.37F;
+        sunBatch.drawStreak(SunRenderTypes.FLAMES, Vec3.ZERO, streakGoldOffsetVec, perpendicularTrailWidthVec, streakGoldWidth, trailTipScalingFactor, GOLD, 0.9F, textureScrollStreakGoldOffset);
+
+        Vec3 streakWhiteOffsetVec = backwardTrailOffsetVec.scale(0.9);
+        float streakWhiteWidth = trailMaxWidth * 0.35F;
+        float streakWhiteTipScale = trailTipScalingFactor * 0.5F;
+        sunBatch.drawStreak(SunRenderTypes.RAY, Vec3.ZERO, streakWhiteOffsetVec, perpendicularTrailWidthVec, streakWhiteWidth, streakWhiteTipScale, WHITE, 0.8F, 0.0F);
     }
 
-    private static void blast(SunBatch b, CruelSunEntity entity, float partialTick, float time, float sunLevel, float detail) {
-        float ticks = entity.getPhaseTicks(partialTick);
-        float radius = entity.getBlastRadius();
-        float front = CruelSunEntity.blastFront(radius, ticks);
-        float fade = CruelSunEntity.blastFade(ticks);
-        float swell = front * (1.0F + CruelSunEntity.FADE_SWELL * fade);
-        float a = (float) Math.pow(1.0F - fade, 1.3);
-        if (swell < 0.05F) {
+    // SunLevel is never used, how does this factor in to the method that calls it? Used at net/ghostedhype/simplyanime/client/renderer/CruelSunRenderer.java:123
+    private static void renderBlastExplosion(SunBatch sunBatch, CruelSunEntity cruelSunEntity, float partialTick, float time, float sunLevel, float detail) {
+        float explosionSequenceTicks = cruelSunEntity.getPhaseTicks(partialTick);
+        float explosionBlastRadius = cruelSunEntity.getBlastRadius();
+
+        float explosionBlastFrontProgress = CruelSunEntity.blastFront(explosionBlastRadius, explosionSequenceTicks);
+        float explosionBlastFadeProgress = CruelSunEntity.blastFade(explosionSequenceTicks);
+
+        float explosionShockwaveRadius = explosionBlastFrontProgress * (1.0F + CruelSunEntity.FADE_SWELL * explosionBlastFadeProgress);
+
+        float visibilityFadeFactor = (float) Math.pow(1.0F - explosionBlastFadeProgress, 1.3);
+
+        if (explosionShockwaveRadius < 0.05F) {
             return;
         }
+
         // white -> orange -> red
-        int[] shell = SunBatch.mix(ORANGE, RED, fade);
-        int[] heart = SunBatch.mix(WHITE, GOLD, Math.min(1.0F, fade * 1.5F));
-        float turned = time * 0.02F;
-        float slide = -turned / Mth.PI;
+        int[] shellColorGradient = SunBatch.mix(ORANGE, RED, explosionBlastFadeProgress);
+        int[] coreColorGradient = SunBatch.mix(WHITE, GOLD, Math.min(1.0F, explosionBlastFadeProgress * 1.5F));
+
+        float rotationAngle = time * 0.02F;
+        float textureSlide = -rotationAngle / Mth.PI;
 
         // flash
-        if (ticks < 8.0F) {
-            b.glow(Vec3.ZERO, radius * 2.4F, WHITE, 1.0F - ticks / 8.0F);
+        float maxExplosionDurationInTicks = 8.0F;
+        if (explosionSequenceTicks < maxExplosionDurationInTicks) {
+            float maxExplosionBlastRadius = explosionBlastRadius * 2.4F;
+            float maxAlpha = 1.0F - explosionSequenceTicks / 8.0F;
+            sunBatch.drawGlow(Vec3.ZERO, maxExplosionBlastRadius, WHITE, maxAlpha);
         }
-        // ground glow outlasts the fire
-        b.flatGlow(new Vec3(0, 0.06, 0), swell * 1.05F, FLAME, 0.7F * (1.0F - fade * fade));
-        b.flatGlow(new Vec3(0, 0.08, 0), swell * 0.5F, GOLD, 0.5F * (1.0F - fade));
-        // solid at first then thins out
-        float solid = fade < 0.25F ? 1.0F : (float) Math.pow(Math.max(0.0F, 1.0F - (fade - 0.25F) / 0.4F), 1.5);
 
-        if (a > 0.01F) {
-            b.glow(Vec3.ZERO, swell * 1.8F, GOLD, 0.25F * a);
-            b.glow(Vec3.ZERO, swell * 1.15F, shell, 0.3F * a);
-            rays(b, Vec3.ZERO, swell * 0.3F, swell, swell * 0.08F, 18, time, PALE, 0.6F * a * (1.0F - fade));
+        // ground glow outlasts the fire
+        Vec3 groundVecFlameOffset = new Vec3(0, 0.06, 0);
+        float flatGlowFlameRadius = explosionBlastRadius * 1.05F;
+        float flatGlowFlameAlpha = 0.7F * (1.0F - explosionBlastFadeProgress * explosionBlastFadeProgress);
+        sunBatch.drawFlatGlow(groundVecFlameOffset, flatGlowFlameRadius, FLAME, flatGlowFlameAlpha);
+
+        Vec3 groundVecGoldOffset = new Vec3(0, 0.08, 0);
+        float flatGlowGoldRadius = explosionShockwaveRadius * 0.5F;
+        float flatGlowGoldAlpha = 0.5F * (1.0F - explosionBlastFadeProgress);
+        sunBatch.drawFlatGlow(groundVecGoldOffset, flatGlowGoldRadius, GOLD, flatGlowGoldAlpha);
+
+        // solid at first then thins out
+        float solidnessFactor = explosionBlastFadeProgress < 0.25F
+                ? 1.0F
+                : (float) Math.pow(Math.max(0.0F, 1.0F - (explosionBlastFadeProgress - 0.25F) / 0.4F), 1.5);
+
+        if (visibilityFadeFactor > 0.01F) {
+            float shockwaveVisibilityFadeRadius = explosionShockwaveRadius * 1.8F;
+            float shockwaveVisibilityFadeAlpha = visibilityFadeFactor * 0.25F;
+            sunBatch.drawGlow(Vec3.ZERO, shockwaveVisibilityFadeRadius, GOLD, shockwaveVisibilityFadeAlpha);
+
+            float shockwaveShellVisibilityFadeRadius = explosionShockwaveRadius * 1.15F;
+            float shockwaveShellVisibilityFadeAlpha = visibilityFadeFactor * 0.3F;
+            sunBatch.drawGlow(Vec3.ZERO, shockwaveShellVisibilityFadeRadius, shellColorGradient, shockwaveShellVisibilityFadeAlpha);
+
+            float godRaysInnerRadius = explosionShockwaveRadius * 0.3F;
+            float godRaysHalfWidth = explosionShockwaveRadius * 0.08F;
+            float godRaysAlpha = 0.6F * visibilityFadeFactor * (1.0F - explosionBlastFadeProgress);
+            renderGodRays(sunBatch, Vec3.ZERO, godRaysInnerRadius, explosionShockwaveRadius, godRaysHalfWidth, 18, time, PALE, godRaysAlpha);
 
             // dome, the skin sits on the damage front
-            if (solid > 0.5F) {
-                b.depthBall(Vec3.ZERO, swell * 0.95F);
+            float domeThreshold = 0.5F;
+            if (solidnessFactor > domeThreshold) {
+                float domeRadius = explosionShockwaveRadius * 0.95F;
+                sunBatch.drawDepthBall(Vec3.ZERO, domeRadius);
             }
-            b.ball(true, SunRenderTypes.PLASMA_A, Vec3.ZERO, swell * 0.97F, 0.3F, slide, SunBatch.mix(PALE, ORANGE, fade), SunBatch.mix(ORANGE, FLAME, fade), solid, solid);
-            b.ball(false, SunRenderTypes.PLASMA_A, Vec3.ZERO, swell * 0.98F, 0.3F, slide, FLAME, FLAME, 0.5F * a, 0.7F * a);
-            b.ball(false, SunRenderTypes.PLASMA_B, Vec3.ZERO, swell * 0.99F, -0.8F, -slide * 0.7F, GOLD, ORANGE,
-                    0.45F * a * (1.0F - fade), 0.3F * a);
+
+            float domeMidShellRadius = explosionShockwaveRadius * 0.97F;
+            int[] domeMidShellColorGradientA = SunBatch.mix(PALE, ORANGE, explosionBlastFadeProgress);
+            int[] domeMidShellColorGradientB = SunBatch.mix(ORANGE, FLAME, explosionBlastFadeProgress);
+            sunBatch.drawBall(true, SunRenderTypes.PLASMA_A, Vec3.ZERO, domeMidShellRadius, 0.3F, textureSlide, domeMidShellColorGradientA, domeMidShellColorGradientB, solidnessFactor, solidnessFactor);
+
+            float domeMidShellHighlightRadius = explosionShockwaveRadius * 0.98F;
+            float domeMidShellHighlightCoreAlpha = visibilityFadeFactor * 0.5F;
+            float domeMidShellHighlightRimAlpha = visibilityFadeFactor * 0.7F;
+            sunBatch.drawBall(false, SunRenderTypes.PLASMA_A, Vec3.ZERO, domeMidShellHighlightRadius, 0.3F, textureSlide, FLAME, FLAME, domeMidShellHighlightCoreAlpha, domeMidShellHighlightRimAlpha);
+
+            float domeCoronaRadius = explosionShockwaveRadius * 0.99F;
+            float domeCoronaTextureSlide = -textureSlide * 0.7F;
+            float domeCoronaCoreAlpha = 0.45F * visibilityFadeFactor * (1.0F - explosionBlastFadeProgress);
+            float domeCoronaRimAlpha = visibilityFadeFactor * 0.3F;
+            sunBatch.drawBall(false, SunRenderTypes.PLASMA_B, Vec3.ZERO, domeCoronaRadius, -0.8F, domeCoronaTextureSlide, GOLD, ORANGE, domeCoronaCoreAlpha, domeCoronaRimAlpha);
+
             // hotter ball inside
-            b.ball(false, SunRenderTypes.PLASMA_B, Vec3.ZERO, swell * 0.6F, 0.5F, slide * 1.6F, heart, GOLD, 0.5F * a, 0.2F * a);
+            float coreRadius = explosionShockwaveRadius * 0.6F;
+            float coreTextureSlide = textureSlide * 1.6F;
+            float coreCoreAlpha = visibilityFadeFactor * 0.5F;
+            float coreRimAlpha = visibilityFadeFactor * 0.2F;
+            sunBatch.drawBall(false, SunRenderTypes.PLASMA_B, Vec3.ZERO, coreRadius, 0.5F, coreTextureSlide, coreColorGradient, GOLD, coreCoreAlpha, coreRimAlpha);
+
             // shock front
-            b.ball(false, SunRenderTypes.PLASMA_B, Vec3.ZERO, swell, 1.1F, slide * 0.4F, PALE, PALE, 0.0F, 0.9F * a * (1.0F - fade));
+            float shockFrontTextureSlide = textureSlide * 0.4F;
+            float shockFrontRimAlpha = 0.9F * visibilityFadeFactor * (1.0F - explosionBlastFadeProgress);
+            sunBatch.drawBall(false, SunRenderTypes.PLASMA_B, Vec3.ZERO, explosionShockwaveRadius, 1.1F, shockFrontTextureSlide, PALE, PALE, 0.0F, shockFrontRimAlpha);
 
             // tongues, tips on the damage front
-            int flames = Math.max(24, (int) (70 * detail));
-            for (int i = 0; i < flames; i++) {
-                Vec3 n = spot(i, flames, turned * 0.3F, 0.3F);
-                float facing = b.facing(Vec3.ZERO, n, swell);
-                if (n.y < -0.15 || facing < -0.35F || facing > 0.3F) {
+            int maxFlames = Math.max(24, (int) (70 * detail));
+            float groundCullThreshold = -0.15F;
+            float backfaceCullThreshold = -0.35F;
+            float foreshorteningCullThreshold = 0.3F;
+
+            for (int flames = 0; flames < maxFlames; flames++) {
+                Vec3 normalDir = calculateSphereSurfacePoint(flames, maxFlames, rotationAngle * 0.3F, 0.3F);
+                float cameraFacingFactor = sunBatch.facing(Vec3.ZERO, normalDir, explosionShockwaveRadius);
+
+                if (normalDir.y < groundCullThreshold
+                        || cameraFacingFactor < backfaceCullThreshold
+                        || cameraFacingFactor > foreshorteningCullThreshold ) {
                     continue;
                 }
-                float flick = 0.5F + 0.5F * Mth.sin(time * 0.4F + i * 2.13F);
-                // fade with the solid fire or they look like loose cones
-                float show = a * solid * Mth.clamp(1.15F - facing, 0.0F, 1.0F);
-                b.tongue(Vec3.ZERO, n, swell * 0.72F, swell * (0.14F + 0.14F * flick), swell * 0.12F, i, FLAME, 0.9F * show);
-                b.tongue(Vec3.ZERO, n, swell * 0.72F, swell * (0.08F + 0.08F * flick), swell * 0.08F, i + 2, GOLD, 0.8F * show);
+
+                float flameFlickerIntensity = 0.5F + 0.5F * Mth.sin(time * 0.4F + flames * 2.13F);
+
+                // fade with the solid fire, or they look like loose cones
+                float edgeVisibilityFade = visibilityFadeFactor * solidnessFactor * Mth.clamp(1.15F - cameraFacingFactor, 0.0F, 1.0F);
+                float tongueRadius = explosionShockwaveRadius * 0.72F;
+                float tongueLengthA = explosionShockwaveRadius * (0.14F + 0.14F * flameFlickerIntensity);
+                float tongueHalfWidthA = explosionShockwaveRadius * 0.12F;
+                float tongueAlphaA = edgeVisibilityFade * 0.9F;
+                sunBatch.drawTongue(Vec3.ZERO, normalDir, tongueRadius, tongueLengthA, tongueHalfWidthA, flames, FLAME, tongueAlphaA);
+
+                float tongueLengthB = explosionShockwaveRadius * (0.08F + 0.08F * flameFlickerIntensity);
+                float tongueHalfWidthB = explosionShockwaveRadius * 0.08F;
+                float tongueAlphaB = edgeVisibilityFade * 0.8F;
+                sunBatch.drawTongue(Vec3.ZERO, normalDir, tongueRadius, tongueLengthB, tongueHalfWidthB, flames + 2, GOLD, tongueAlphaB);
             }
 
             // ground shockwaves
-            for (int k = 0; k < 3; k++) {
-                float lag = Math.max(0.0F, 1.0F - k * 0.18F);
-                b.flatRing(new Vec3(0, 0.1 * k, 0), swell * lag, k == 0 ? PALE : ORANGE, (0.9F - 0.2F * k) * a);
+            int maxGroundShockwaves = 3;
+            for (int groundShockwaves = 0; groundShockwaves < maxGroundShockwaves; groundShockwaves++) {
+                float shockwaveLag = Math.max(0.0F, 1.0F - groundShockwaves * 0.18F);
+                Vec3 groundPosOffsetY = new Vec3(0, 0.1 * groundShockwaves, 0);
+                float groundShockwaveRadius = explosionShockwaveRadius * shockwaveLag;
+                int[] shockwaveColor = groundShockwaves == 0 ? PALE : ORANGE;
+                float shockwaveAlpha = (0.9F - 0.2F * groundShockwaves) * visibilityFadeFactor;
+                sunBatch.drawFlatRing(groundPosOffsetY, groundShockwaveRadius, shockwaveColor, shockwaveAlpha);
             }
         }
 
         // smoke, can go past the edge
-        if (fade > 0.15F) {
-            float k = (fade - 0.15F) / 0.85F;
-            float smokeAlpha = 0.6F * Mth.sin(Math.min(1.0F, k * 1.3F) * Mth.PI) + 0.1F * (1.0F - k);
-            for (int i = 0; i < 16; i++) {
-                float ang = i * 2.399F;
-                float dist = radius * (0.2F + 0.5F * ((i * 37) % 11) / 10.0F);
-                Vec3 at = new Vec3(Mth.cos(ang) * dist, radius * (0.1F + 0.9F * k) * (0.5F + 0.5F * ((i * 13) % 7) / 6.0F),
-                        Mth.sin(ang) * dist);
-                float size = radius * (0.35F + 0.3F * ((i * 7) % 5) / 4.0F) * (0.8F + 0.6F * k);
-                b.smoke(at, size, time * 0.01F + i, SMOKE, smokeAlpha);
+        float smokeThreshold = 0.15F;
+        if (explosionBlastFadeProgress > smokeThreshold) {
+            float remainingSmokeTime = (explosionBlastFadeProgress - 0.15F) / 0.85F;
+            float smokeAlpha = 0.6F * Mth.sin(Math.min(1.0F, remainingSmokeTime * 1.3F) * Mth.PI) + 0.1F * (1.0F - remainingSmokeTime);
+
+            int maxSmokeParticles = 16;
+            for (int smokeParticles = 0; smokeParticles < maxSmokeParticles; smokeParticles++) {
+                float horizontalSpiralAngle = smokeParticles * 2.399F;
+
+                float horizontalDistanceFactor = ((smokeParticles * 37) & 11) / 10.0F;
+                float horizontalSpawnRadius = explosionBlastRadius * (0.2F + 0.5F * horizontalDistanceFactor);
+
+                float verticalJitterMultiplier = 0.5F + 0.5F * ((smokeParticles * 13) % 7) / 6.0F;
+                float verticalRiseAltitude = explosionBlastRadius * (0.1F + 0.9F * remainingSmokeTime) * verticalJitterMultiplier;
+
+                Vec3 smokeSpawnPos = new Vec3(
+                        Mth.cos(horizontalSpiralAngle) * horizontalSpawnRadius,
+                        verticalRiseAltitude,
+                        Mth.sin(horizontalSpiralAngle) * horizontalSpawnRadius
+                );
+
+                float scaleJitterMultiplier = 0.8F + 0.6F * remainingSmokeTime;
+                float smokeParticleSize = explosionBlastRadius * (0.35F + 0.3F * ((smokeParticles * 7) % 5) / 4.0F) * scaleJitterMultiplier;
+                float smokeAnimationSpinOffset = time * 0.01F + smokeParticles;
+                sunBatch.drawSmoke(smokeSpawnPos, smokeParticleSize, smokeAnimationSpinOffset, SMOKE, smokeAlpha);
             }
         }
     }

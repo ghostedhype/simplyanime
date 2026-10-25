@@ -9,7 +9,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
-public class HeavenMarkVisualEntity extends EffectEntity {
+public class HeavenMarkVisualEntity extends SimplyAnimeEffectEntity {
 
     public static final int MODE_CRACK = 0;
     public static final int MODE_LOCK_ON = 1;
@@ -36,9 +36,9 @@ public class HeavenMarkVisualEntity extends EffectEntity {
         super(type, world);
     }
 
-    public HeavenMarkVisualEntity(Level world, int mode, Vec3 pos, int lifetime, float size) {
+    public HeavenMarkVisualEntity(Level world, int mode, Vec3 vec3, int lifetime, float size) {
         this(EntityRegistry.HEAVEN_MARK_VISUAL.get(), world);
-        this.setPos(pos.x, pos.y, pos.z);
+        this.setPos(vec3.x, vec3.y, vec3.z);
         this.entityData.set(MODE, mode);
         this.entityData.set(LIFETIME, Math.max(1, lifetime));
         this.entityData.set(SIZE, size);

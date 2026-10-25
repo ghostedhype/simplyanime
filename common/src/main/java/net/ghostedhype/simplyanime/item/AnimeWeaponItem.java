@@ -1,8 +1,8 @@
 package net.ghostedhype.simplyanime.item;
 
 import net.ghostedhype.simplyanime.animation.AttackStyle;
-import net.ghostedhype.simplyanime.platform.WeaponItemBase;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Tier;
 import net.sweenus.simplyswords.api.WeaponAbilityContext;
@@ -15,7 +15,7 @@ public abstract class AnimeWeaponItem extends WeaponItemBase {
 
     private final String weaponType;
 
-    protected AnimeWeaponItem(Tier tier, Properties properties, String weaponType) {
+    protected AnimeWeaponItem(Tier tier, Item.Properties properties, String weaponType) {
         super(tier, properties);
         this.weaponType = weaponType;
     }

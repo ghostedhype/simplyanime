@@ -9,7 +9,7 @@ import net.ghostedhype.simplyanime.config.StarburstSettings;
 import net.ghostedhype.simplyanime.entity.BladeSkillEntity;
 import net.ghostedhype.simplyanime.item.DarkRepulserItem;
 import net.ghostedhype.simplyanime.item.ElucidatorItem;
-import net.ghostedhype.simplyanime.platform.Platform;
+import net.ghostedhype.simplyanime.platform.Services;
 import net.ghostedhype.simplyanime.registry.ParticlesRegistry;
 import net.ghostedhype.simplyanime.registry.SoundRegistry;
 import net.minecraft.core.particles.ParticleOptions;
@@ -33,12 +33,7 @@ import net.sweenus.simplyswords.api.SpellScalingProfile;
 import net.sweenus.simplyswords.api.WeaponAbilityContext;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public class BladeSkillManager {
 
@@ -223,7 +218,7 @@ public class BladeSkillManager {
             double along = Mth.clamp(box.getCenter().subtract(origin).dot(cast.aim), 0.0, length);
             if (AbilityHelper.distanceToPoint(box, origin.add(cast.aim.scale(along))) <= radius) {
                 land(world, cast, actor, entity, cast.struck, damage, new Vec3(push.x, push.y * 0.5 + 0.25 * settings.knockback, push.z),
-                        ParticlesRegistry.CRIMSON_SPARK.get());
+                        ParticlesRegistry.BLADE_SPARK_CRIMSON.get());
             }
         }
     }
@@ -263,15 +258,15 @@ public class BladeSkillManager {
         float cos = Mth.cos(angle);
         float sin = Mth.sin(angle);
         for (Entity entity : world.getEntities(actor, new AABB(cast.center, cast.center).inflate(half * 1.5 + 2.0, 4.0, half * 1.5 + 2.0))) {
-            Vec3 at = entity.getBoundingBox().getCenter().subtract(cast.center);
-            double x = at.x * cos + at.z * sin;
-            double z = -at.x * sin + at.z * cos;
+            Vec3 entityPosition = entity.getBoundingBox().getCenter().subtract(cast.center);
+            double x = entityPosition.x * cos + entityPosition.z * sin;
+            double z = -entityPosition.x * sin + entityPosition.z * cos;
             double reach = Math.max(Math.abs(x), Math.abs(z)) - entity.getBbWidth() * 0.5;
-            if (reach <= half + 0.6 && Math.abs(at.y - 1.0) <= 3.0) {
-                Vec3 out = new Vec3(at.x, 0, at.z);
+            if (reach <= half + 0.6 && Math.abs(entityPosition.y - 1.0) <= 3.0) {
+                Vec3 out = new Vec3(entityPosition.x, 0, entityPosition.z);
                 Vec3 push = out.lengthSqr() < 1.0E-4 ? Vec3.ZERO : out.normalize().scale(settings.knockback);
                 land(world, cast, actor, entity, cast.struck, damage, push.add(0, 0.3 * settings.knockback, 0),
-                        ParticlesRegistry.FROST_SHARD.get());
+                        ParticlesRegistry.BLADE_SPARK_FROST.get());
             }
         }
     }
@@ -299,7 +294,7 @@ public class BladeSkillManager {
             if (damage > 0) {
                 // each cut lands once on everything inside the flurry
                 Set<UUID> struck = new HashSet<>();
-                ParticleOptions spark = dark ? ParticlesRegistry.STAR_SPARK.get() : ParticlesRegistry.FROST_SHARD.get();
+                ParticleOptions spark = dark ? ParticlesRegistry.BLADE_SPARK_STAR.get() : ParticlesRegistry.BLADE_SPARK_FROST.get();
                 for (Entity entity : world.getEntities(actor, new AABB(actor.position(), actor.position())
                         .inflate(settings.reach * 1.4 + 2.0))) {
                     if (BladeSkillShapes.inFlurry(actor.position(), look, entity.getBoundingBox(), settings.reach)) {
@@ -328,7 +323,7 @@ public class BladeSkillManager {
                 Vec3 out = entity.getBoundingBox().getCenter().subtract(actor.getEyePosition());
                 Vec3 push = out.lengthSqr() < 1.0E-4 ? look : out.normalize();
                 land(world, cast, actor, entity, cast.struck, damage, push.scale(settings.finalKnockback).add(0, 0.35, 0),
-                        ParticlesRegistry.STAR_SPARK.get());
+                        ParticlesRegistry.BLADE_SPARK_STAR.get());
             }
         }
     }
@@ -338,13 +333,13 @@ public class BladeSkillManager {
         while (iterator.hasNext()) {
             SlashWave wave = iterator.next();
             if (wave.damage > 0) {
-                Vec3 at = wave.centerAt(wave.age);
+                Vec3 wavePosition = wave.centerAt(wave.age);
                 double reach = wave.halfAt(wave.age) + wave.thickness + wave.speed + 2.0;
                 Vec3 push = wave.direction.scale(wave.knockback).add(0, 0.2 * wave.knockback, 0);
-                for (Entity entity : world.getEntities(actor, new AABB(at, at).inflate(reach))) {
+                for (Entity entity : world.getEntities(actor, new AABB(wavePosition, wavePosition).inflate(reach))) {
                     AABB box = entity.getBoundingBox();
                     if (wave.touches(box, wave.age) || wave.age > 0 && wave.touches(box, wave.age - 0.5F)) {
-                        land(world, cast, actor, entity, wave.struck, wave.damage, push, ParticlesRegistry.FROST_SHARD.get());
+                        land(world, cast, actor, entity, wave.struck, wave.damage, push, ParticlesRegistry.BLADE_SPARK_FROST.get());
                     }
                 }
             }
@@ -357,20 +352,20 @@ public class BladeSkillManager {
 
     private static void land(ServerLevel world, BladeSkillCast cast, LivingEntity actor, Entity entity, Set<UUID> struck,
                              float damage, Vec3 push, ParticleOptions spark) {
-        Entity root = Platform.partParent(entity);
+        Entity root = Services.PLATFORM.getParentPart(entity);
         if (root == null || root == actor || !struck.add(root.getUUID())) {
             return;
         }
-        Vec3 at = AbilityHelper.strike(world, actor, cast.ownerId, cast.stack, entity, root, damage);
-        if (at == null) {
+        Vec3 strikePosition = AbilityHelper.strike(world, actor, cast.ownerId, cast.stack, entity, root, damage);
+        if (strikePosition == null) {
             return;
         }
         if (root instanceof LivingEntity) {
             root.push(push.x, push.y, push.z);
             root.hurtMarked = true;
         }
-        world.sendParticles(spark, at.x, at.y, at.z, 10, 0.3, 0.3, 0.3, 0.3);
-        sound(world, at, SoundRegistry.BLADE_HIT.get(), 1.0F, 0.9F + world.getRandom().nextFloat() * 0.3F);
+        world.sendParticles(spark, strikePosition.x, strikePosition.y, strikePosition.z, 10, 0.3, 0.3, 0.3, 0.3);
+        sound(world, strikePosition, SoundRegistry.BLADE_HIT.get(), 1.0F, 0.9F + world.getRandom().nextFloat() * 0.3F);
     }
 
     private static Vec3 aim(ServerLevel world, BladeSkillCast cast, LivingEntity actor) {
@@ -391,8 +386,8 @@ public class BladeSkillManager {
         actor.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, ticks, level, false, false, false));
     }
 
-    private static void sound(ServerLevel world, Vec3 at, SoundEvent sound, float volume, float pitch) {
-        AbilityHelper.playSound(world, at, sound, volume, pitch);
+    private static void sound(ServerLevel world, Vec3 position, SoundEvent sound, float volume, float pitch) {
+        AbilityHelper.playSound(world, position, sound, volume, pitch);
     }
 
     private static void abort(ServerLevel world, BladeSkillCast cast, @Nullable LivingEntity actor) {

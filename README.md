@@ -1,7 +1,7 @@
 # Simply Anime
 
 An addon for [Simply Swords](https://github.com/Sweenus/SimplySwords) that adds unique weapons from anime.
-Forge 1.20.1 and NeoForge 1.21.1.
+Forge 1.20.1.
 
 ## Weapons
 
@@ -20,76 +20,51 @@ Forge 1.20.1 and NeoForge 1.21.1.
 - Right click, Cruel Sun: raise the axe and a small sun forms over you, burning anything close to it. Then
   it is thrown and goes off in a dome of fire. The sun and the blast are bigger toward noon.
 
-**Elucidator** (longsword)
-- Right click, Vorpal Strike: draw the sword back while it charges, then lunge and drive a lance of light
-  through everything in front of you. It goes through terrain and never breaks blocks.
+All three are registered like any other Simply Swords unique: they show up in loot chests, take gems and
+runic upgrades, and ship Better Combat weapon attributes. Ea can also be crafted (two nether stars, redstone blocks,
+gold blocks and a netherite ingot).
 
-**Dark Repulser** (longsword)
-- Right click, Horizontal Square: four cuts that draw a square of light around you, each one flying outward.
-  The square then bursts and throws back what it touches.
-
-**Starburst Stream** (Elucidator in the main hand, Dark Repulser in the off hand)
-- Right click turns into a flurry of over thirty cuts that fills the air around you while you keep walking,
-  and ends on a crossing blow. Once it starts it can't be cancelled, you take less damage while it runs,
-  and both swords go on cooldown together.
-
-All five are registered like any other Simply Swords unique: they show up wherever Simply Swords uniques do, take
-gems and runic upgrades, and ship Better Combat weapon attributes. Ea can also be crafted (two nether stars,
-redstone blocks, gold blocks and a netherite ingot).
-
-The abilities show their name above the hotbar when they go off, that can be turned off.
-
-The skills of Elucidator and Dark Repulser are fully animated from start to end. The spear, Rhitta and the two
-swords have their own attack swings that follow each other: two cuts and a thrust for the blades, three heavy
-blows for the axe, and holding the attack button keeps them coming. With Better Combat installed its animations
-are used for attacks. `attackAnimations` and `holdToAttack` in `client.toml` turn these off.
+Enuma Elish and Cruel Sun show the ability's name above the hotbar when they go off, that can be turned off.
 
 Config files are in `config/simplyanime/`:
-- `weapons.toml`: the spear, Ea, Elucidator, Dark Repulser and Starburst Stream. Damage, cooldowns, sizes, sounds,
-  whether Ea is craftable, which of them are found in loot.
+- `weapons.toml`: the spear and Ea. Damage, cooldowns, beam size, sounds, whether Ea is craftable or found in loot.
 - `rhitta.toml`: the axe, how the sun affects it, Cruel Sun, and the block damage options (all off by default).
-- `rhitta_client.toml` and `client.toml`: per player. Camera, screen flashes, HUD, particles, glow strength with shaders.
+- `rhitta_client.toml` and `client.toml`: per player. Camera, HUD, particles, glow strength with shaders.
 
 `/SimplyAnime cooldown reset [players]` clears ability cooldowns (needs op), handy for testing.
 
 ## Shaders
 
-Works with Oculus on Forge and Iris on NeoForge. The effects use each pack's own glow and bloom and light the ground around
+Works with Oculus (and Embeddium). The effects use each pack's own glow and bloom and light the ground around
 them. Tested with BSL, Complementary Reimagined and Unbound, MakeUp Ultra Fast, Rethinking Voxels, Solas,
 Photon and Bliss. If a pack washes the effects out, lower `shaderGlow` in `client.toml`.
 
 ## Requirements
 
-Forge 1.20.1:
-- Forge 47.4 or newer
+- Minecraft 1.20.1, Forge 47.4 or newer
 - Simply Swords 1.70.2 or newer (and its own dependencies)
-- Fzzy Config 0.7.6 or newer
-
-NeoForge 1.21.1 (also loads on 1.21):
-- NeoForge 21.1 or newer
-- Simply Swords 1.70.2 or newer (and its own dependencies)
-- Fzzy Config 0.7.6 or newer
+- Architectury API 9.2.14 or newer
 
 ## Building
 
-Run Gradle from the version folder you want. It has to run on **Java 21** (the mod for 1.20.1 still
-targets Java 17). If your default Java isn't 21, point Gradle at one, for example in
-`~/.gradle/gradle.properties`:
+Gradle has to run on **Java 21** (Architectury Loom 1.13 needs it). The mod itself targets Java 17.
+If your default Java isn't 21, point Gradle at one, for example in `~/.gradle/gradle.properties`:
 
 ```
 org.gradle.java.home=/path/to/jdk-21
 ```
 
-Then, inside `forge-1.20.1` or `neoforge-1.21.1`:
+Then:
 
 ```
-./gradlew build        # jar ends up in build/libs
+./gradlew build        # jar ends up in build/libs/simplyanime-<version>.jar
 ./gradlew runClient    # dev client with Simply Swords and its dependencies
-./gradlew runServer    # dev server, on Forge add -Pplain to leave the shader mods out
+./gradlew runClient -Pautotest -Pshaders=all    # casts everything under each pack in run-autotest/shaderpacks, saves screenshots
 ```
 
-The dependencies come from the Modrinth maven by version id (`gradle.properties`), because the builds
-for different loaders share the same version number.
+Simply Swords and Simply Tooltips come from the Modrinth maven by version id (`gradle.properties`),
+because the Forge and Fabric builds share the same version number and the plain number resolves to
+the Fabric jar.
 
 ## Credits
 

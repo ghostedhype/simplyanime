@@ -6,7 +6,6 @@ import net.minecraft.client.particle.SpriteSet;
 
 @FunctionalInterface
 public interface ParticleConstructor {
-
     Particle create(ClientLevel level,
                     double x, double y, double z,
                     double xSpeed, double ySpeed, double zSpeed,

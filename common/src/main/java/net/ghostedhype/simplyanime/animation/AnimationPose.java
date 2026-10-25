@@ -32,8 +32,8 @@ public class AnimationPose {
     }
 
     public boolean isEmpty() {
-        for (float w : this.weight) {
-            if (w > 0.0F) {
+        for (float partWeight : this.weight) {
+            if (partWeight > 0.0F) {
                 return false;
             }
         }
@@ -66,30 +66,30 @@ public class AnimationPose {
         }
     }
 
-    // for a left handed wielder: everything swaps sides
+    // for a left-handed wielder: everything swaps sides
     public void mirror() {
         this.swap(AnimationClip.RIGHT_ARM, AnimationClip.LEFT_ARM);
         this.swap(AnimationClip.RIGHT_LEG, AnimationClip.LEFT_LEG);
         this.swap(AnimationClip.RIGHT_ITEM, AnimationClip.LEFT_ITEM);
         for (int part = 0; part < AnimationClip.PARTS; part++) {
             this.position[part].x = -this.position[part].x;
-            Quaternionf q = this.rotation[part];
-            q.set(q.x, -q.y, -q.z, q.w);
+            Quaternionf rotation = this.rotation[part];
+            rotation.set(rotation.x, -rotation.y, -rotation.z, rotation.w);
         }
         int sword = this.rightSword;
         this.rightSword = this.leftSword;
         this.leftSword = sword;
     }
 
-    private void swap(int a, int b) {
-        this.scratchPosition.set(this.position[a]);
-        this.position[a].set(this.position[b]);
-        this.position[b].set(this.scratchPosition);
-        this.scratchRotation.set(this.rotation[a]);
-        this.rotation[a].set(this.rotation[b]);
-        this.rotation[b].set(this.scratchRotation);
-        float w = this.weight[a];
-        this.weight[a] = this.weight[b];
-        this.weight[b] = w;
+    private void swap(int positionOne, int positionTwo) {
+        this.scratchPosition.set(this.position[positionOne]);
+        this.position[positionOne].set(this.position[positionTwo]);
+        this.position[positionTwo].set(this.scratchPosition);
+        this.scratchRotation.set(this.rotation[positionOne]);
+        this.rotation[positionOne].set(this.rotation[positionTwo]);
+        this.rotation[positionTwo].set(this.scratchRotation);
+        float weight = this.weight[positionOne];
+        this.weight[positionOne] = this.weight[positionTwo];
+        this.weight[positionTwo] = weight;
     }
 }

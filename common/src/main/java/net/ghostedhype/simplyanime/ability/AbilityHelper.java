@@ -1,13 +1,21 @@
 package net.ghostedhype.simplyanime.ability;
 
-import net.ghostedhype.simplyanime.platform.Platform;
+import net.ghostedhype.simplyanime.Constants;
+import net.ghostedhype.simplyanime.platform.Services;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -21,17 +29,17 @@ import java.util.UUID;
 // bits every ability needs
 public class AbilityHelper {
 
-    public static void playSound(ServerLevel world, Vec3 at, SoundEvent sound, float volume, float pitch) {
+    public static void playSound(ServerLevel world, Vec3 position, SoundEvent sound, float volume, float pitch) {
         if (volume > 0) {
-            world.playSound(null, at.x, at.y, at.z, sound, SoundSource.PLAYERS, volume, pitch);
+            world.playSound(null, position.x, position.y, position.z, sound, SoundSource.PLAYERS, volume, pitch);
         }
     }
 
     public static double distanceToPoint(AABB box, Vec3 point) {
-        double dx = Math.max(Math.max(box.minX - point.x, 0.0), point.x - box.maxX);
-        double dy = Math.max(Math.max(box.minY - point.y, 0.0), point.y - box.maxY);
-        double dz = Math.max(Math.max(box.minZ - point.z, 0.0), point.z - box.maxZ);
-        return Math.sqrt(dx * dx + dy * dy + dz * dz);
+        double distanceX = Math.max(Math.max(box.minX - point.x, 0.0), point.x - box.maxX);
+        double distanceY = Math.max(Math.max(box.minY - point.y, 0.0), point.y - box.maxY);
+        double distanceZ = Math.max(Math.max(box.minZ - point.z, 0.0), point.z - box.maxZ);
+        return Math.sqrt(distanceX * distanceX + distanceY * distanceY + distanceZ * distanceZ);
     }
 
     public static boolean canHit(ServerLevel world, LivingEntity target, LivingEntity actor, @Nullable UUID ownerId) {
@@ -67,7 +75,11 @@ public class AbilityHelper {
             }
             return null;
         }
-        if (Platform.isPart(entity)) {
+        if (Services.PLATFORM.isPart(entity)) {
+            entity.hurt(SimplySwordsAPI.getWeaponDamageSource(actor), damage);
+        }
+
+        if (Services.PLATFORM.isPart(entity)) {
             entity.hurt(SimplySwordsAPI.getWeaponDamageSource(actor), damage);
         }
         return null;
@@ -83,5 +95,25 @@ public class AbilityHelper {
         float sin = Mth.sin(angle);
         float x = mirror ? -local.x : local.x;
         return origin.add(x * cos + local.z * sin, local.y, -x * sin + local.z * cos);
+    }
+
+    private static final ResourceLocation REACH_ID = Constants.tryId("rhitta_growth");
+
+    // reach as a multiple of the normal one, 1 puts it back
+    public static void setReach(Player player, float scale) {
+        setReach(player, Attributes.ENTITY_INTERACTION_RANGE, scale);
+        setReach(player, Attributes.BLOCK_INTERACTION_RANGE, scale);
+    }
+
+    public static void setReach(Player player, Holder<Attribute> attribute, float scale) {
+        AttributeInstance instance = player.getAttribute(attribute);
+        if (instance == null) {
+            return;
+        }
+        instance.removeModifier(REACH_ID);
+        if (scale > 1.0F) {
+            instance.addTransientModifier(new AttributeModifier(REACH_ID, scale - 1.0F,
+                    AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+        }
     }
 }

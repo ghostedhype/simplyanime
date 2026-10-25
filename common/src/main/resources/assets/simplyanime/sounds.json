@@ -130,38 +130,38 @@
       "simplyanime:spear/strike_quick3"
     ]
   },
-  "enuma_elish_charge": {
-    "subtitle": "subtitles.simplyanime.enuma_elish_charge",
+  "ea_charge": {
+    "subtitle": "subtitles.simplyanime.ea_charge",
     "sounds": [
       {
-        "name": "simplyanime:enuma_elish/charge",
+        "name": "simplyanime:ea/charge",
         "attenuation_distance": 24
       }
     ]
   },
-  "enuma_elish_release": {
-    "subtitle": "subtitles.simplyanime.enuma_elish_release",
+  "ea_release": {
+    "subtitle": "subtitles.simplyanime.ea_release",
     "sounds": [
       {
-        "name": "simplyanime:enuma_elish/release",
+        "name": "simplyanime:ea/release",
         "attenuation_distance": 48
       }
     ]
   },
-  "enuma_elish_beam": {
-    "subtitle": "subtitles.simplyanime.enuma_elish_beam",
+  "ea_beam": {
+    "subtitle": "subtitles.simplyanime.ea_beam",
     "sounds": [
       {
-        "name": "simplyanime:enuma_elish/beam",
+        "name": "simplyanime:ea/beam",
         "attenuation_distance": 48
       }
     ]
   },
-  "enuma_elish_impact": {
-    "subtitle": "subtitles.simplyanime.enuma_elish_impact",
+  "ea_impact": {
+    "subtitle": "subtitles.simplyanime.ea_impact",
     "sounds": [
       {
-        "name": "simplyanime:enuma_elish/impact",
+        "name": "simplyanime:ea/impact",
         "attenuation_distance": 48
       }
     ]

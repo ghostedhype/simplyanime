@@ -1,0 +1,44 @@
+plugins {
+    id 'multiloader-common'
+    id 'net.neoforged.moddev'
+}
+
+neoForge {
+    neoFormVersion = rootProject.neo_form_version
+    parchment {
+        minecraftVersion = rootProject.parchment_minecraft
+        mappingsVersion = rootProject.parchment_version
+    }
+    def at = file('src/main/resources/META-INF/accesstransformer.cfg')
+    if (at.exists()) {
+        accessTransformers.from(at)
+    }
+}
+
+dependencies {
+    compileOnly 'org.spongepowered:mixin:0.8.7'
+
+    compileOnly "org.jetbrains.kotlin:kotlin-stdlib:${rootProject.kotlin_version}"
+    compileOnly "org.jetbrains.kotlin:kotlin-reflect:${rootProject.kotlin_version}"
+    // NeoForge 1.21.1 dependencies already use Mojmap names.
+    // Only shared Fzzy Config APIs may be used in Common.
+    compileOnly "${rootProject.fzzy_config_neoforge_coordinate}"
+
+    def swords = rootProject.findProperty('simply_swords_neoforge_coordinate')?.trim()
+    if (swords) compileOnly swords
+}
+
+configurations {
+    commonJava {
+        canBeResolved = false
+        canBeConsumed = true
+    }
+    commonResources {
+        canBeResolved = false
+        canBeConsumed = true
+    }
+}
+artifacts {
+    commonJava sourceSets.main.java.sourceDirectories.singleFile
+    commonResources sourceSets.main.resources.sourceDirectories.singleFile
+}

@@ -2,7 +2,7 @@ package net.ghostedhype.simplyanime.client.pose;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.ghostedhype.simplyanime.item.DivineAxeRhittaItem;
-import net.ghostedhype.simplyanime.item.EnumaElishItem;
+import net.ghostedhype.simplyanime.item.EaItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -39,8 +39,8 @@ public class FirstPerson {
 
     private static boolean pose(PoseStack poseStack, LocalPlayer player, HumanoidArm arm, ItemStack stack,
                                 float partialTick, float equipProgress, float swingProgress) {
-        if (stack.getItem() instanceof EnumaElishItem) {
-            return EnumaElishFirstPerson.apply(poseStack, player, arm, stack, partialTick, equipProgress, swingProgress);
+        if (stack.getItem() instanceof EaItem) {
+            return EaFirstPerson.apply(poseStack, player, arm, stack, partialTick, equipProgress, swingProgress);
         }
         if (stack.getItem() instanceof DivineAxeRhittaItem) {
             return RhittaFirstPerson.apply(poseStack, player, arm, stack, partialTick, equipProgress, swingProgress);

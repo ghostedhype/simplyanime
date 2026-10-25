@@ -1,11 +1,16 @@
 package net.ghostedhype.simplyanime.client.particle;
 
-import net.ghostedhype.simplyanime.platform.ClientPlatform;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.particle.TextureSheetParticle;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.util.Mth;
+import org.jetbrains.annotations.NotNull;
 
 public class BladeSparkParticle extends TextureSheetParticle {
 
@@ -17,13 +22,13 @@ public class BladeSparkParticle extends TextureSheetParticle {
     private final float startScale;
     private final float turn;
 
-    private BladeSparkParticle(ClientLevel world, double x, double y, double z, double vx, double vy, double vz,
+    public BladeSparkParticle(ClientLevel world, double x, double y, double z, double velocityX, double velocityY, double velocityZ,
                                SpriteSet sprites, int kind) {
         super(world, x, y, z, 0, 0, 0);
         this.kind = kind;
-        this.xd = vx;
-        this.yd = vy;
-        this.zd = vz;
+        this.xd = velocityX;
+        this.yd = velocityY;
+        this.zd = velocityZ;
         this.hasPhysics = false;
         this.friction = kind == FROST ? 0.93F : 0.9F;
         this.gravity = kind == FROST ? 0.35F : 0.0F;
@@ -96,7 +101,13 @@ public class BladeSparkParticle extends TextureSheetParticle {
     }
 
     @Override
-    public ParticleRenderType getRenderType() {
-        return ClientPlatform.ADDITIVE_PARTICLES;
+    public @NotNull ParticleRenderType getRenderType() {
+        return (tesselator, textureManager) -> {
+            RenderSystem.depthMask(false);
+            RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_PARTICLES);
+            RenderSystem.enableBlend();
+            RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
+            return tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.PARTICLE);
+        };
     }
 }

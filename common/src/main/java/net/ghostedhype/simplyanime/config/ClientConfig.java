@@ -12,7 +12,7 @@ public class ClientConfig extends Config {
     private static ClientConfig instance;
 
     public ClientConfig() {
-        super(Constants.id("client"));
+        super(Constants.tryId("client"));
     }
 
     public static ClientConfig get() {

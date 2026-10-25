@@ -1,13 +1,13 @@
 package net.ghostedhype.simplyanime.entity;
 
-import net.ghostedhype.simplyanime.SimplyAnime;
 import net.ghostedhype.simplyanime.ability.AbilityHelper;
 import net.ghostedhype.simplyanime.ability.SunPower;
 import net.ghostedhype.simplyanime.callout.Callout;
 import net.ghostedhype.simplyanime.callout.Callouts;
+import net.ghostedhype.simplyanime.client.SimplyAnimeClientCommon;
 import net.ghostedhype.simplyanime.config.RhittaConfig;
 import net.ghostedhype.simplyanime.item.DivineAxeRhittaItem;
-import net.ghostedhype.simplyanime.platform.Platform;
+import net.ghostedhype.simplyanime.platform.Services;
 import net.ghostedhype.simplyanime.registry.EntityRegistry;
 import net.ghostedhype.simplyanime.registry.SoundRegistry;
 import net.minecraft.core.BlockPos;
@@ -49,37 +49,29 @@ import net.sweenus.simplyswords.api.WeaponAbilityContext;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.WeakHashMap;
+import java.util.*;
 
 public class CruelSunEntity extends PhasedEffectEntity {
 
     public static final int PHASE_CHARGE = 0;
     public static final int PHASE_FLIGHT = 1;
-    public static final int PHASE_BLAST = 2;
+    public static final int PHASE_BLAST  = 2;
 
     // shared with the renderer
-    public static final float HEAT_EDGE = 2.0F;          // corona ends here, x orb radius
-    public static final float FLIGHT_GROWTH = 0.2F;
+    public static final float HEAT_EDGE         = 2.0F; // corona ends here, x orb radius
+    public static final float FLIGHT_GROWTH     = 0.2F;
     public static final float FLIGHT_GROW_TICKS = 30.0F;
-    public static final int IGNITE_TICKS = 20;
-    public static final int ERUPT_TICKS = 25;
-    public static final int SWELL_TICKS = 55;
-    public static final int BLAST_GROW = 10;
-    public static final int BLAST_TICKS = 70;
-    public static final float LINGER_CUTOFF = 0.6F;      // fireball is too faint to burn past this
-    public static final float TRAIL_LENGTH = 3.0F;       // x orb radius
-    public static final float TRAIL_WIDTH = 0.9F;        // half width at the sun
-    public static final float TRAIL_TIP = 0.15F;
-    public static final float FADE_SWELL = 0.08F;
-    private static final double HAND_OFFSET = 0.36;      // raised hand, out from the middle of the body
+    public static final int IGNITE_TICKS        = 20;
+    public static final int ERUPT_TICKS         = 25;
+    public static final int SWELL_TICKS         = 55;
+    public static final int BLAST_GROW          = 10;
+    public static final int BLAST_TICKS         = 70;
+    public static final float LINGER_CUTOFF     = 0.6F; // fireball is too faint to burn past this
+    public static final float TRAIL_LENGTH      = 3.0F; // x orb radius
+    public static final float TRAIL_WIDTH       = 0.9F; // half width at the sun
+    public static final float TRAIL_TIP         = 0.15F;
+    public static final float FADE_SWELL        = 0.08F;
+    private static final double HAND_OFFSET     = 0.36; // raised hand, out from the middle of the body
 
     public static boolean dealing;
 
@@ -127,7 +119,7 @@ public class CruelSunEntity extends PhasedEffectEntity {
     }
 
     public static boolean start(ServerLevel world, LivingEntity actor, LivingEntity target, ItemStack stack, InteractionHand hand) {
-        RhittaConfig.CruelSunSettings cfg = RhittaConfig.get().cruelSun;
+        RhittaConfig.CruelSunSettings config = RhittaConfig.get().cruelSun;
         float power = SunPower.sunPower(world, actor);
         float sun = SunPower.fraction(power);
 
@@ -139,20 +131,20 @@ public class CruelSunEntity extends PhasedEffectEntity {
         entity.setOwner(actor);
         entity.entityData.set(POWER, power);
         entity.entityData.set(SUN, sun);
-        entity.entityData.set(ORB_BASE, cfg.orbRadius * (1.0F + cfg.orbSunScaling * sun));
-        entity.entityData.set(BLAST_RADIUS, cfg.blastRadius * (1.0F + cfg.blastSunScaling * sun));
-        entity.setPhase(PHASE_CHARGE, cfg.chargeDuration);
-        Vec3 at = chargeCenter(actor, 1.0F, entity.getOrbRadius(0.0F));
-        entity.setPos(at.x, at.y, at.z);
+        entity.entityData.set(ORB_BASE, config.orbRadius * (1.0F + config.orbSunScaling * sun));
+        entity.entityData.set(BLAST_RADIUS, config.blastRadius * (1.0F + config.blastSunScaling * sun));
+        entity.setPhase(PHASE_CHARGE, config.chargeDuration);
+        Vec3 position = chargeCenter(actor, 1.0F, entity.getOrbRadius(0.0F));
+        entity.setPos(position.x, position.y, position.z);
         world.addFreshEntity(entity);
         CHARGING.put(actor.getUUID(), entity);
 
-        if (cfg.chargeSlowness >= 0) {
-            actor.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, cfg.chargeDuration + 2,
-                    cfg.chargeSlowness, false, false, false));
+        if (config.chargeSlowness >= 0) {
+            actor.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, config.chargeDuration + 2,
+                    config.chargeSlowness, false, false, false));
         }
-        AbilityHelper.playSound(world, actor.position(), SoundRegistry.RHITTA_BUILD_UP.get(), cfg.buildUpVolume, 1.0F);
-        if (cfg.nameText && cfg.nameTextLead >= cfg.chargeDuration) {
+        AbilityHelper.playSound(world, actor.position(), SoundRegistry.RHITTA_BUILD_UP.get(), config.buildUpVolume, 1.0F);
+        if (config.nameText && config.nameTextLead >= config.chargeDuration) {
             Callouts.send(world, actor.position(), Callout.CRUEL_SUN);
         }
         return true;
@@ -209,13 +201,13 @@ public class CruelSunEntity extends PhasedEffectEntity {
         }
         ServerLevel world = (ServerLevel) this.level();
         LivingEntity owner = this.owner(world);
-        RhittaConfig.CruelSunSettings cfg = RhittaConfig.get().cruelSun;
+        RhittaConfig.CruelSunSettings config = RhittaConfig.get().cruelSun;
         int ticks = (int) this.getPhaseTicks(0.0F);
 
         switch (this.getPhase()) {
-            case PHASE_CHARGE -> this.tickCharge(world, owner, cfg, ticks);
-            case PHASE_FLIGHT -> this.tickFlight(world, owner, cfg, ticks);
-            case PHASE_BLAST -> this.tickBlast(world, owner, cfg, ticks);
+            case PHASE_CHARGE -> this.tickCharge(world, owner, config, ticks);
+            case PHASE_FLIGHT -> this.tickFlight(world, owner, config, ticks);
+            case PHASE_BLAST -> this.tickBlast(world, owner, config, ticks);
             default -> this.discard();
         }
         if (this.tickCount > 20 * 60) {
@@ -223,7 +215,7 @@ public class CruelSunEntity extends PhasedEffectEntity {
         }
     }
 
-    private void tickCharge(ServerLevel world, LivingEntity owner, RhittaConfig.CruelSunSettings cfg, int ticks) {
+    private void tickCharge(ServerLevel world, LivingEntity owner, RhittaConfig.CruelSunSettings config, int ticks) {
         if (owner == null || !owner.isAlive() || !holdingAxe(owner)) {
             // swapped off the axe or died, the sun fizzles
             if (owner != null) {
@@ -235,44 +227,44 @@ public class CruelSunEntity extends PhasedEffectEntity {
             return;
         }
         float orb = this.getOrbRadius(0.0F);
-        Vec3 at = chargeCenter(owner, 1.0F, orb);
-        this.setPos(at.x, at.y, at.z);
+        Vec3 position = chargeCenter(owner, 1.0F, orb);
+        this.setPos(position.x, position.y, position.z);
 
-        if (cfg.nameText && cfg.nameTextLead < cfg.chargeDuration && ticks == Math.max(1, cfg.chargeDuration - cfg.nameTextLead)) {
+        if (config.nameText && config.nameTextLead < config.chargeDuration && ticks == Math.max(1, config.chargeDuration - config.nameTextLead)) {
             Callouts.send(world, owner.position(), Callout.CRUEL_SUN);
         }
         if (ticks == IGNITE_TICKS) {
-            AbilityHelper.playSound(world, at, SoundEvents.BLAZE_SHOOT, cfg.buildUpVolume * 0.5F, 0.5F);
+            AbilityHelper.playSound(world, position, SoundEvents.BLAZE_SHOOT, config.buildUpVolume * 0.5F, 0.5F);
         }
-        if (ticks >= IGNITE_TICKS && ticks % 3 == 0 && cfg.surroundingsCatchFire) {
+        if (ticks >= IGNITE_TICKS && ticks % 3 == 0 && config.surroundingsCatchFire) {
             this.setSurroundingsAlight(world, owner, orb);
         }
-        if (ticks >= IGNITE_TICKS && ticks % Math.max(1, cfg.heatInterval) == 0) {
-            this.heat(world, owner, at, orb * HEAT_EDGE, null, 0.0F, cfg);
+        if (ticks >= IGNITE_TICKS && ticks % Math.max(1, config.heatInterval) == 0) {
+            this.heat(world, owner, position, orb * HEAT_EDGE, null, 0.0F, config);
         }
-        if (ticks >= cfg.chargeDuration) {
-            this.launch(world, owner, cfg);
+        if (ticks >= config.chargeDuration) {
+            this.launch(world, owner, config);
         }
     }
 
-    private void launch(ServerLevel world, LivingEntity owner, RhittaConfig.CruelSunSettings cfg) {
+    private void launch(ServerLevel world, LivingEntity owner, RhittaConfig.CruelSunSettings config) {
         this.direction = this.aim(world, owner);
         this.entityData.set(DIRECTION, pack(this.direction));
-        this.setPhase(PHASE_FLIGHT, (int) Math.ceil(cfg.range / Math.max(0.2, cfg.projectileSpeed)));
+        this.setPhase(PHASE_FLIGHT, (int) Math.ceil(config.range / Math.max(0.2, config.projectileSpeed)));
         CHARGING.remove(owner.getUUID(), this);
         // don't let the build up audio run into the throw
         this.stopSound(world, SoundRegistry.RHITTA_BUILD_UP.get());
         owner.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
         owner.swing(this.hand, true);
-        AbilityHelper.playSound(world, owner.position(), SoundRegistry.RHITTA_LAUNCH.get(), cfg.launchVolume, 0.9F);
-        AbilityHelper.playSound(world, owner.position(), SoundEvents.BLAZE_SHOOT, cfg.launchVolume * 0.6F, 0.6F);
+        AbilityHelper.playSound(world, owner.position(), SoundRegistry.RHITTA_LAUNCH.get(), config.launchVolume, 0.9F);
+        AbilityHelper.playSound(world, owner.position(), SoundEvents.BLAZE_SHOOT, config.launchVolume * 0.6F, 0.6F);
     }
 
     private Vec3 aim(ServerLevel world, LivingEntity owner) {
         if (owner instanceof Player) {
-            RhittaConfig.CruelSunSettings cfg = RhittaConfig.get().cruelSun;
+            RhittaConfig.CruelSunSettings config = RhittaConfig.get().cruelSun;
             Vec3 eye = owner.getEyePosition();
-            Vec3 reach = eye.add(owner.getViewVector(1.0F).scale(cfg.range));
+            Vec3 reach = eye.add(owner.getViewVector(1.0F).scale(config.range));
             BlockHitResult look = world.clip(new ClipContext(eye, reach, ClipContext.Block.COLLIDER,
                     ClipContext.Fluid.NONE, owner));
             Vec3 to = (look.getType() == HitResult.Type.BLOCK ? look.getLocation() : reach).subtract(this.position());
@@ -290,10 +282,10 @@ public class CruelSunEntity extends PhasedEffectEntity {
         return Vec3.directionFromRotation(owner.getXRot(), owner.getYHeadRot()).normalize();
     }
 
-    private void tickFlight(ServerLevel world, LivingEntity owner, RhittaConfig.CruelSunSettings cfg, int ticks) {
+    private void tickFlight(ServerLevel world, LivingEntity owner, RhittaConfig.CruelSunSettings config, int ticks) {
         float orb = this.getOrbRadius(0.0F);
         Vec3 from = this.position();
-        Vec3 to = from.add(this.direction.scale(cfg.projectileSpeed));
+        Vec3 to = from.add(this.direction.scale(config.projectileSpeed));
 
         Vec3 hit = null;
         BlockHitResult block = world.clip(new ClipContext(from, to, ClipContext.Block.COLLIDER,
@@ -310,11 +302,11 @@ public class CruelSunEntity extends PhasedEffectEntity {
 
         this.traveled += from.distanceTo(to);
         this.setPos(to.x, to.y, to.z);
-        if (ticks % Math.max(1, cfg.heatInterval) == 0) {
-            this.heat(world, owner, to, orb * HEAT_EDGE, this.direction.scale(-orb * TRAIL_LENGTH), orb, cfg);
+        if (ticks % Math.max(1, config.heatInterval) == 0) {
+            this.heat(world, owner, to, orb * HEAT_EDGE, this.direction.scale(-orb * TRAIL_LENGTH), orb, config);
         }
-        if (hit != null || this.traveled >= cfg.range) {
-            this.detonate(world, owner, cfg);
+        if (hit != null || this.traveled >= config.range) {
+            this.detonate(world, owner, config);
         }
     }
 
@@ -324,15 +316,15 @@ public class CruelSunEntity extends PhasedEffectEntity {
         double bestAlong = Double.MAX_VALUE;
         Vec3 path = to.subtract(from);
         double length = path.length();
-        Vec3 dir = length < 1.0E-6 ? this.direction : path.scale(1.0 / length);
+        Vec3 direction = length < 1.0E-6 ? this.direction : path.scale(1.0 / length);
         for (Entity entity : world.getEntities(this, new AABB(from, to).inflate(orb + 1.0))) {
             LivingEntity target = rootLiving(entity);
             if (target == null || !canHit(target, owner)) {
                 continue;
             }
             AABB box = entity.getBoundingBox();
-            double along = Mth.clamp(box.getCenter().subtract(from).dot(dir), 0.0, length);
-            Vec3 point = from.add(dir.scale(along));
+            double along = Mth.clamp(box.getCenter().subtract(from).dot(direction), 0.0, length);
+            Vec3 point = from.add(direction.scale(along));
             if (AbilityHelper.distanceToPoint(box, point) <= orb && along < bestAlong) {
                 bestAlong = along;
                 best = point;
@@ -341,25 +333,25 @@ public class CruelSunEntity extends PhasedEffectEntity {
         return best;
     }
 
-    private void detonate(ServerLevel world, LivingEntity owner, RhittaConfig.CruelSunSettings cfg) {
+    private void detonate(ServerLevel world, LivingEntity owner, RhittaConfig.CruelSunSettings config) {
         this.setPhase(PHASE_BLAST, BLAST_TICKS);
         float sun = this.getSun();
-        Vec3 at = this.position();
-        float volume = cfg.blastVolume * (0.7F + 0.3F * sun);
+        Vec3 position = this.position();
+        float volume = config.blastVolume * (0.7F + 0.3F * sun);
         float pitch = 1.05F - 0.25F * sun;
-        AbilityHelper.playSound(world, at, SoundRegistry.RHITTA_BLAST.get(), volume, pitch);
-        AbilityHelper.playSound(world, at, SoundRegistry.RHITTA_BLAST_ROAR.get(), volume * 0.7F, pitch * 0.9F);
-        AbilityHelper.playSound(world, at, Platform.explosionSound(), volume * 0.6F, pitch * 0.7F);
-        this.explosionBlocks(world, owner, cfg);
+        AbilityHelper.playSound(world, position, SoundRegistry.RHITTA_BLAST.get(), volume, pitch);
+        AbilityHelper.playSound(world, position, SoundRegistry.RHITTA_BLAST_ROAR.get(), volume * 0.7F, pitch * 0.9F);
+        AbilityHelper.playSound(world, position, SoundEvents.GENERIC_EXPLODE.value(), volume * 0.6F, pitch * 0.7F);
+        this.explosionBlocks(world, owner, config);
     }
 
-    private void tickBlast(ServerLevel world, LivingEntity owner, RhittaConfig.CruelSunSettings cfg, int ticks) {
+    private void tickBlast(ServerLevel world, LivingEntity owner, RhittaConfig.CruelSunSettings config, int ticks) {
         float radius = this.getBlastRadius();
         Vec3 center = this.position();
         if (ticks <= BLAST_GROW) {
-            this.blast(world, owner, center, blastFront(radius, ticks), radius, cfg);
-        } else if (blastFade(ticks) < LINGER_CUTOFF && ticks % Math.max(1, cfg.heatInterval) == 0) {
-            this.heat(world, owner, center, radius * (1.0F + FADE_SWELL * blastFade(ticks)), null, 0.0F, cfg);
+            this.blast(world, owner, center, blastFront(radius, ticks), radius, config);
+        } else if (blastFade(ticks) < LINGER_CUTOFF && ticks % Math.max(1, config.heatInterval) == 0) {
+            this.heat(world, owner, center, radius * (1.0F + FADE_SWELL * blastFade(ticks)), null, 0.0F, config);
         }
         if (ticks >= BLAST_TICKS) {
             this.discard();
@@ -368,8 +360,8 @@ public class CruelSunEntity extends PhasedEffectEntity {
 
     // the big hit, once per target as the edge reaches it
     private void blast(ServerLevel world, LivingEntity owner, Vec3 center, float front, float radius,
-                       RhittaConfig.CruelSunSettings cfg) {
-        float full = this.scaled(owner, cfg.blastDamageScaling, cfg.blastSpellScaling);
+                       RhittaConfig.CruelSunSettings config) {
+        float full = this.scaled(owner, config.blastDamageScaling, config.blastSpellScaling);
         for (Entity entity : world.getEntities(this, new AABB(center, center).inflate(front + 2.0))) {
             LivingEntity target = rootLiving(entity);
             if (target == null || !canHit(target, owner)) {
@@ -379,22 +371,22 @@ public class CruelSunEntity extends PhasedEffectEntity {
             if (dist > front || !this.blasted.add(target.getUUID())) {
                 continue;
             }
-            float falloff = Mth.lerp((float) Mth.clamp(dist / radius, 0.0, 1.0), 1.0F, cfg.edgeDamage);
+            float falloff = Mth.lerp((float) Mth.clamp(dist / radius, 0.0, 1.0), 1.0F, config.edgeDamage);
             if (this.hurt(world, owner, target, full * falloff)) {
                 Vec3 push = target.position().add(0, target.getBbHeight() * 0.5, 0).subtract(center);
                 push = push.lengthSqr() < 1.0E-4 ? new Vec3(0, 1, 0) : push.normalize();
-                double strength = cfg.knockback * falloff;
+                double strength = config.knockback * falloff;
                 target.push(push.x * strength, 0.25 * strength + push.y * 0.3 * strength, push.z * strength);
                 target.hurtMarked = true;
-                Platform.ignite(target, Math.round(cfg.blastBurnSeconds * (0.5F + 0.5F * this.getSun())));
+                target.igniteForSeconds(Math.round(config.blastBurnSeconds * (0.5F + 0.5F * this.getSun())));
             }
         }
     }
 
     // heat ticks: corona, trail, lingering fireball
     private void heat(ServerLevel world, LivingEntity owner, Vec3 center, float radius, Vec3 trail,
-                      float orb, RhittaConfig.CruelSunSettings cfg) {
-        float damage = this.scaled(owner, cfg.heatDamageScaling, cfg.heatSpellScaling);
+                      float orb, RhittaConfig.CruelSunSettings config) {
+        float damage = this.scaled(owner, config.heatDamageScaling, config.heatSpellScaling);
         AABB area = new AABB(center, center).inflate(radius + 2.0);
         if (trail != null) {
             area = area.minmax(new AABB(center.add(trail), center.add(trail)).inflate(orb * TRAIL_WIDTH + 2.0));
@@ -412,8 +404,8 @@ public class CruelSunEntity extends PhasedEffectEntity {
                 continue;
             }
             struck.add(target);
-            if (this.hurt(world, owner, target, damage) && cfg.heatBurnSeconds > 0) {
-                Platform.ignite(target, Math.round(cfg.heatBurnSeconds));
+            if (this.hurt(world, owner, target, damage) && config.heatBurnSeconds > 0) {
+                target.igniteForSeconds(Math.round(config.heatBurnSeconds));
             }
         }
     }
@@ -453,30 +445,30 @@ public class CruelSunEntity extends PhasedEffectEntity {
         for (int i = 0; i < 3; i++) {
             double a = this.random.nextDouble() * Mth.TWO_PI;
             double r = 1.5 + this.random.nextDouble() * reach;
-            BlockPos.MutableBlockPos pos = BlockPos.containing(owner.getX() + Math.cos(a) * r, owner.getY() + 3,
+            BlockPos.MutableBlockPos blockPos = BlockPos.containing(owner.getX() + Math.cos(a) * r, owner.getY() + 3,
                     owner.getZ() + Math.sin(a) * r).mutable();
-            for (int d = 0; d < 7 && world.getBlockState(pos).isAir(); d++) {
-                pos.move(0, -1, 0);
+            for (int step = 0; step < 7 && world.getBlockState(blockPos).isAir(); step++) {
+                blockPos.move(0, -1, 0);
             }
-            BlockState state = world.getBlockState(pos);
-            if (state.isAir() || !state.isFlammable(world, pos, Direction.UP)) {
+            BlockState state = world.getBlockState(blockPos);
+            if (state.isAir() || !Services.PLATFORM.isFlammable(state, world, blockPos, Direction.UP)) {
                 continue;
             }
             if (state.canBeReplaced()) {
-                world.setBlockAndUpdate(pos.immutable(), BaseFireBlock.getState(world, pos));
-            } else if (world.getBlockState(pos.above()).isAir()) {
-                world.setBlockAndUpdate(pos.above(), BaseFireBlock.getState(world, pos.above()));
+                world.setBlockAndUpdate(blockPos.immutable(), BaseFireBlock.getState(world, blockPos));
+            } else if (world.getBlockState(blockPos.above()).isAir()) {
+                world.setBlockAndUpdate(blockPos.above(), BaseFireBlock.getState(world, blockPos.above()));
             }
         }
     }
 
-    private void explosionBlocks(ServerLevel world, LivingEntity owner, RhittaConfig.CruelSunSettings cfg) {
-        if ((!cfg.explosionBreaksBlocks && !cfg.explosionStartsFires)
+    private void explosionBlocks(ServerLevel world, LivingEntity owner, RhittaConfig.CruelSunSettings config) {
+        if ((!config.explosionBreaksBlocks && !config.explosionStartsFires)
                 || !world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
             return;
         }
         BlockPos center = this.blockPosition();
-        if (cfg.explosionBreaksBlocks) {
+        if (config.explosionBreaksBlocks) {
             int r = (int) Math.min(this.getBlastRadius() * 0.5F, 12.0F);
             for (BlockPos pos : BlockPos.betweenClosed(center.offset(-r, -r, -r), center.offset(r, r, r))) {
                 if (pos.distSqr(center) > r * r) {
@@ -489,7 +481,7 @@ public class CruelSunEntity extends PhasedEffectEntity {
                 }
             }
         }
-        if (cfg.explosionStartsFires) {
+        if (config.explosionStartsFires) {
             int r = (int) Math.min(this.getBlastRadius() * 0.6F, 14.0F);
             for (BlockPos pos : BlockPos.betweenClosed(center.offset(-r, -r, -r), center.offset(r, r, r))) {
                 if (this.random.nextInt(5) != 0 || pos.distSqr(center) > r * r
@@ -508,15 +500,15 @@ public class CruelSunEntity extends PhasedEffectEntity {
         if (length < 1.0E-4) {
             return false;
         }
-        Vec3 dir = trail.scale(1.0 / length);
-        double along = Mth.clamp(box.getCenter().subtract(center).dot(dir), 0.0, length);
+        Vec3 direction = trail.scale(1.0 / length);
+        double along = Mth.clamp(box.getCenter().subtract(center).dot(direction), 0.0, length);
         float half = orb * Mth.lerp((float) (along / length), TRAIL_WIDTH, TRAIL_TIP);
-        return AbilityHelper.distanceToPoint(box, center.add(dir.scale(along))) <= half;
+        return AbilityHelper.distanceToPoint(box, center.add(direction.scale(along))) <= half;
     }
 
     @Nullable
     private static LivingEntity rootLiving(Entity entity) {
-        Entity root = Platform.partParent(entity);
+        Entity root = Services.PLATFORM.getParentPart(entity);
         return root instanceof LivingEntity living && living.isAlive() ? living : null;
     }
 
@@ -534,12 +526,15 @@ public class CruelSunEntity extends PhasedEffectEntity {
 
     private void stopSound(ServerLevel world, SoundEvent sound) {
         ClientboundStopSoundPacket stop = new ClientboundStopSoundPacket(sound.getLocation(), SoundSource.PLAYERS);
-        for (ServerPlayer player : world.getPlayers(p -> p.distanceToSqr(this) < 192 * 192)) {
+        // The reason for `serverPlayer` vs `player` is to avoid potential confusion on the part of the reader
+        // with the initial part of the `for` loop
+        for (ServerPlayer player : world.getPlayers(serverPlayer -> serverPlayer.distanceToSqr(this) < 192 * 192)) {
             player.connection.send(stop);
         }
     }
 
     private void clientTick() {
+
         LivingEntity owner = this.getOwner();
         int phase = this.getPhase();
         CLIENT_ACTIVE.add(this);
@@ -557,11 +552,11 @@ public class CruelSunEntity extends PhasedEffectEntity {
         }
         if (phase == PHASE_FLIGHT && !this.flightSoundStarted) {
             this.flightSoundStarted = true;
-            SimplyAnime.client.sunFlightStarted(this);
+            SimplyAnimeClientCommon.clientHooks.sunFlightStarted(this);
         }
-        SimplyAnime.client.sunTick(this, owner);
+        SimplyAnimeClientCommon.clientHooks.sunTick(this, owner);
         if (this.tickCount % 2 == 0) {
-            EffectLights.set(this, this.lightSpots(owner));
+            SimplyAnimeEffectLights.set(this, this.lightSpots(owner));
         }
     }
 
@@ -601,7 +596,7 @@ public class CruelSunEntity extends PhasedEffectEntity {
         super.onClientRemoval();
         CLIENT_BY_OWNER.values().removeIf(sun -> sun == this);
         CLIENT_ACTIVE.remove(this);
-        EffectLights.clear(this);
+        SimplyAnimeEffectLights.clear(this);
     }
 
     @Override
