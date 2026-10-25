@@ -64,21 +64,18 @@ public class SunBatch {
         }
         // opaque under packs when nothing shows through
         boolean opaque = solid && coreAlpha > 0.95F && rimAlpha > 0.95F && ShaderCompat.packInUse();
-        List<Corner> list = (opaque ? this.solid : solid ? this.blended : this.additive).computeIfAbsent(texture, k -> new ArrayList<>());
+        List<Corner> list = (opaque ? this.solid : solid ? this.blended : this.additive).computeIfAbsent(texture, resourceLocation -> new ArrayList<>());
         float cosTilt = Mth.cos(tilt);
         float sinTilt = Mth.sin(tilt);
         // camera inside the ball
         boolean inside = this.eye.distanceToSqr(centerVec) < radius * radius;
         Corner[] corners = new Corner[4];
-        //TODO Should be defined
-        for (int j = 0; j < LAT; j++) {
-            //TODO Should be defined
-            for (int i = 0; i < LON; i++) {
+        for (int latitudeIndex = 0; latitudeIndex < LAT; latitudeIndex++) {
+            for (int longitudeIndex = 0; longitudeIndex < LON; longitudeIndex++) {
                 boolean seen = false;
-                //TODO Should be defined
-                for (int k = 0; k < 4; k++) {
-                    int ringIndex = i + (k == 1 || k == 2 ? 1 : 0);
-                    int segmentIndex = j + (k >= 2 ? 1 : 0);
+                for (int cornerIndex = 0; cornerIndex < 4; cornerIndex++) {
+                    int ringIndex = longitudeIndex + (cornerIndex == 1 || cornerIndex == 2 ? 1 : 0);
+                    int segmentIndex = latitudeIndex + (cornerIndex >= 2 ? 1 : 0);
                     float[] unit = BALL[segmentIndex][ringIndex];
                     Vec3 normalVec = new Vec3(unit[0], unit[1] * cosTilt - unit[2] * sinTilt, unit[1] * sinTilt + unit[2] * cosTilt);
                     Vec3 pointVec = centerVec.add(normalVec.scale(radius));
@@ -90,7 +87,7 @@ public class SunBatch {
                     float swing = Mth.sqrt(Mth.clamp(facing, 0.0F, 1.0F));
                     // uv pinches at the poles, fade it
                     float alpha = Mth.lerp(swing, rimAlpha, coreAlpha) * (solid ? 1.0F : Math.min(1.0F, unit[3] * 2.5F));
-                    corners[k] = corner(pointVec, mix(rim, core, swing), alpha, ringIndex * 2.0F / LON + slide, segmentIndex / (float) LAT);
+                    corners[cornerIndex] = corner(pointVec, mix(rim, core, swing), alpha, ringIndex * 2.0F / LON + slide, segmentIndex / (float) LAT);
                 }
                 if (seen) {
                     for (Corner corner : corners) {
@@ -107,18 +104,15 @@ public class SunBatch {
             return;
         }
         Corner[] corners = new Corner[4];
-        //TODO Should be defined
-        for (int j = 0; j < LAT; j++) {
-            //TODO Should be defined
-            for (int i = 0; i < LON; i++) {
+        for (int latitudeIndex = 0; latitudeIndex < LAT; latitudeIndex++) {
+            for (int longitudeIndex = 0; longitudeIndex < LON; longitudeIndex++) {
                 boolean seen = false;
-                //TODO Should be defined
-                for (int k = 0; k < 4; k++) {
-                    float[] unit = BALL[j + (k >= 2 ? 1 : 0)][i + (k == 1 || k == 2 ? 1 : 0)];
+                for (int cornerIndex = 0; cornerIndex < 4; cornerIndex++) {
+                    float[] unit = BALL[latitudeIndex + (cornerIndex >= 2 ? 1 : 0)][longitudeIndex + (cornerIndex == 1 || cornerIndex == 2 ? 1 : 0)];
                     Vec3 normalVec = new Vec3(unit[0], unit[1], unit[2]);
                     Vec3 pointVec = centerVec.add(normalVec.scale(radius));
                     seen |= normalVec.dot(this.eye.subtract(pointVec)) > 0.0;
-                    corners[k] = corner(pointVec, WHITE, 1.0F, 0.5F, 0.5F);
+                    corners[cornerIndex] = corner(pointVec, WHITE, 1.0F, 0.5F, 0.5F);
                 }
                 if (seen) {
                     for (Corner corner : corners) {
@@ -146,8 +140,8 @@ public class SunBatch {
         if (alphaFrom <= 0.005F && alphaTo <= 0.005F) {
             return;
         }
-        List<Corner> list = this.blended.computeIfAbsent(texture, k -> new ArrayList<>());
-        List<Corner> lit = this.additive.computeIfAbsent(texture, k -> new ArrayList<>());
+        List<Corner> list = this.blended.computeIfAbsent(texture, resourceLocation -> new ArrayList<>());
+        List<Corner> lit = this.additive.computeIfAbsent(texture, resourceLocation -> new ArrayList<>());
         int last = path.length - 1;
         Vec3[] sides = new Vec3[path.length];
         for (int i = 0; i <= last; i++) {
@@ -222,7 +216,7 @@ public class SunBatch {
     }
 
     void drawStreak(ResourceLocation texture, Vec3 a, Vec3 b, Vec3 w, float halfA, float halfB, int[] color, float alpha, float scroll) {
-        List<Corner> list = this.blended.computeIfAbsent(texture, k -> new ArrayList<>());
+        List<Corner> list = this.blended.computeIfAbsent(texture, resourceLocation -> new ArrayList<>());
         float minU = 0.0F;
         float maxU = texture == SunRenderTypes.FLAMES ? 0.25F : 1.0F;
         list.add(corner(a.add(w.scale(-halfA)), color, alpha, minU, 1 + scroll));

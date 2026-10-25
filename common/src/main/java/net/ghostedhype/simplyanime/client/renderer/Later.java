@@ -16,7 +16,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-//TODO Later what!? Document what this is referring to
+// effects are queued and drawn after water, ice and glass so they show up over them
 public class Later {
 
     public interface Draw {

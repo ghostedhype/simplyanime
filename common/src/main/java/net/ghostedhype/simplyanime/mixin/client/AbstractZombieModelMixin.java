@@ -18,7 +18,9 @@ public abstract class AbstractZombieModelMixin<T extends Monster> {
     @Inject(method = "setupAnim(Lnet/minecraft/world/entity/monster/Monster;FFFFF)V", at = @At("TAIL"))
     private void simplyanime$poseAbilityArms(T entity, float limbAngle, float limbDistance, float animationProgress,
                                                     float headYaw, float headPitch, CallbackInfo ci) {
-        //TODO This needs to be looked at. There are multiple chances for NPEs
+        if (entity == null) {
+            return;
+        }
         InvertedSpearPoses.apply(entity, animationProgress, (HumanoidModel<?>) (Object) this);
         EaPoses.apply(entity, animationProgress, (HumanoidModel<?>) (Object) this);
         BladePoses.apply(entity, (HumanoidModel<?>) (Object) this, headYaw, headPitch);

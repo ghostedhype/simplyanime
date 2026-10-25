@@ -1,5 +1,6 @@
 package net.ghostedhype.simplyanime.client.pose;
 
+import net.ghostedhype.simplyanime.client.ClientTicks;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import me.fzzyhmstrs.fzzy_config.api.ConfigApiJava;
@@ -206,8 +207,7 @@ public class BladePoses {
     }
 
     public static void apply(LivingEntity entity, HumanoidModel<?> model, float headYaw, float headPitch) {
-        //TODO Make method for getting tick
-        float partialTick = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
+        float partialTick = ClientTicks.partialTick();
         AnimationPose pose = pose(entity, partialTick);
         ModelPart[] parts = {model.head, model.body, model.rightArm, model.leftArm, model.rightLeg, model.leftLeg};
         if (pose == null) {
@@ -292,8 +292,7 @@ public class BladePoses {
 
     public static boolean renderItem(LivingEntity entity, ItemStack stack, ItemDisplayContext context, HumanoidArm arm,
                                      PoseStack poseStack, MultiBufferSource buffers, int light) {
-        //TODO Make method for getting tick
-        AnimationPose pose = pose(entity, Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true));
+        AnimationPose pose = pose(entity, ClientTicks.partialTick());
         int part = arm == HumanoidArm.RIGHT ? AnimationClip.RIGHT_ITEM : AnimationClip.LEFT_ITEM;
         if (pose == null || pose.weight[part] < 0.5F || stack.isEmpty()) {
             return false;

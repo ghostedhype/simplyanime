@@ -266,7 +266,6 @@ public class HeavenChainVisualEntityRenderer extends EntityRenderer<HeavenChainV
                 shade, shade, shade, a, 0.5F, 0.5F, light, 0.0F, 1.0F, 0.0F);
     }
 
-    //TODO Clean up and make method
     public static void entityVertex(VertexConsumer consumer, Matrix4f matrix, Matrix3f normal, float x, float y, float z,
                                     int r, int g, int b, int a, float u, float v, int light, float nx, float ny, float nz) {
         Vector3f n = normal.transform(new Vector3f(nx, ny, nz));

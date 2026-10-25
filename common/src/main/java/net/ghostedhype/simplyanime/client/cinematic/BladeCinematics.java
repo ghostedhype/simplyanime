@@ -1,5 +1,6 @@
 package net.ghostedhype.simplyanime.client.cinematic;
 
+import net.ghostedhype.simplyanime.client.ClientTicks;
 import net.ghostedhype.simplyanime.ability.BladeSkill;
 import net.ghostedhype.simplyanime.config.ClientConfig;
 import net.ghostedhype.simplyanime.config.Config;
@@ -88,8 +89,7 @@ public class BladeCinematics {
     }
 
     public static double cameraPullBack() {
-        //TODO Make method for getting tick
-        return ClientConfig.get().skillCamera && thirdPerson() ? get(PULL, Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true)) : 0.0;
+        return ClientConfig.get().skillCamera && thirdPerson() ? get(PULL, ClientTicks.partialTick()) : 0.0;
     }
 
     public static double fov(double fov, float partialTick, boolean configured) {

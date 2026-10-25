@@ -125,7 +125,6 @@ public class SunGlowParticle extends TextureSheetParticle {
 
     @Override
     public ParticleRenderType getRenderType() {
-        //TODO ADDITIVE_PARTICLES should be cleaned up
         return this.spark ? (tesselator, textureManager) -> {
             RenderSystem.depthMask(false);
             RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_PARTICLES);

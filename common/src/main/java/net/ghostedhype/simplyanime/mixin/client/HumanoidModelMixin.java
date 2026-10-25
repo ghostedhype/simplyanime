@@ -17,7 +17,9 @@ public abstract class HumanoidModelMixin<T extends LivingEntity> {
     @Inject(method = "setupAnim(Lnet/minecraft/world/entity/LivingEntity;FFFFF)V", at = @At("TAIL"))
     private void simplyanime$poseAbilityArms(T entity, float limbAngle, float limbDistance, float animationProgress,
                                                     float headYaw, float headPitch, CallbackInfo ci) {
-        //TODO This needs to be looked at. There are multiple chances for NPEs
+        if (entity == null) {
+            return;
+        }
         InvertedSpearPoses.apply(entity, animationProgress, (HumanoidModel<?>) (Object) this);
         EaPoses.apply(entity, animationProgress, (HumanoidModel<?>) (Object) this);
         RhittaPoses.apply(entity, animationProgress, (HumanoidModel<?>) (Object) this);

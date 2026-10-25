@@ -1,5 +1,6 @@
 package net.ghostedhype.simplyanime.client.cinematic;
 
+import net.ghostedhype.simplyanime.client.ClientTicks;
 import net.ghostedhype.simplyanime.config.RhittaClientConfig;
 import net.ghostedhype.simplyanime.entity.CruelSunEntity;
 import net.minecraft.client.Minecraft;
@@ -100,8 +101,7 @@ public class RhittaCinematics {
         if (!config.cameraZoom || !thirdPerson()) {
             return 0.0;
         }
-        //TODO Make method for getting tick
-        return get(PULL, Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true)) * config.cameraZoomStrength;
+        return get(PULL, ClientTicks.partialTick()) * config.cameraZoomStrength;
     }
 
     public static double fov(double fov, float partialTick, boolean configured) {

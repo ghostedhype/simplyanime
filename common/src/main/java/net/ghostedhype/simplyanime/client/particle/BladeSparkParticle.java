@@ -102,7 +102,6 @@ public class BladeSparkParticle extends TextureSheetParticle {
 
     @Override
     public @NotNull ParticleRenderType getRenderType() {
-        //TODO ADDITIVE_PARTICLES should be cleaned up
         return (tesselator, textureManager) -> {
             RenderSystem.depthMask(false);
             RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_PARTICLES);
