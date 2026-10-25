@@ -1,16 +1,16 @@
 {
   "display": {
     "icon": {
-      "item": "simplyanime:divine_axe_rhitta"
+      "id": "simplyanime:dark_repulser"
     },
     "title": {
-      "translate": "advancements.simplyanime.divine_axe_rhitta.title"
+      "translate": "advancements.simplyanime.dark_repulser.title"
     },
     "description": {
       "translate": "advancements.simplyswords.find_unique.description",
       "with": [
         {
-          "translate": "item.simplyanime.divine_axe_rhitta"
+          "translate": "item.simplyanime.dark_repulser"
         }
       ]
     },
@@ -27,7 +27,7 @@
         "items": [
           {
             "items": [
-              "simplyanime:divine_axe_rhitta"
+              "simplyanime:dark_repulser"
             ]
           }
         ]

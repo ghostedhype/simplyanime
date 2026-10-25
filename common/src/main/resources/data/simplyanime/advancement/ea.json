@@ -1,21 +1,21 @@
 {
   "display": {
     "icon": {
-      "item": "simplyanime:inverted_spear_of_heaven"
+      "id": "simplyanime:ea"
     },
     "title": {
-      "translate": "advancements.simplyanime.inverted_spear_of_heaven.title"
+      "translate": "advancements.simplyanime.ea.title"
     },
     "description": {
       "translate": "advancements.simplyswords.find_unique.description",
       "with": [
         {
-          "translate": "item.simplyanime.inverted_spear_of_heaven"
+          "translate": "item.simplyanime.ea"
         }
       ]
     },
     "hidden": true,
-    "frame": "task",
+    "frame": "challenge",
     "show_toast": true,
     "announce_to_chat": true
   },
@@ -27,7 +27,7 @@
         "items": [
           {
             "items": [
-              "simplyanime:inverted_spear_of_heaven"
+              "simplyanime:ea"
             ]
           }
         ]

@@ -1,8 +1,14 @@
 {
   "type": "minecraft:crafting_shaped",
-  "conditions": [
+  "neoforge:conditions": [
     {
       "type": "simplyanime:craftable",
+      "weapon": "ea"
+    }
+  ],
+  "fabric:load_conditions": [
+    {
+      "condition": "simplyanime:craftable",
       "weapon": "ea"
     }
   ],
@@ -27,7 +33,8 @@
     }
   },
   "result": {
-    "item": "simplyanime:ea"
+    "id": "simplyanime:ea",
+    "count": 1
   },
   "show_notification": true
 }

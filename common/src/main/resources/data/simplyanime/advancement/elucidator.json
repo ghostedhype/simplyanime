@@ -1,16 +1,16 @@
 {
   "display": {
     "icon": {
-      "item": "simplyanime:ea"
+      "id": "simplyanime:elucidator"
     },
     "title": {
-      "translate": "advancements.simplyanime.ea.title"
+      "translate": "advancements.simplyanime.elucidator.title"
     },
     "description": {
       "translate": "advancements.simplyswords.find_unique.description",
       "with": [
         {
-          "translate": "item.simplyanime.ea"
+          "translate": "item.simplyanime.elucidator"
         }
       ]
     },
@@ -27,7 +27,7 @@
         "items": [
           {
             "items": [
-              "simplyanime:ea"
+              "simplyanime:elucidator"
             ]
           }
         ]
